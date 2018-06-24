@@ -1,0 +1,149 @@
+{
+  "name": "parse-request",
+  "description": "Parse requests in the Browser and Node (with added support for Passport). Made for Cabin.",
+  "version": "0.0.1",
+  "author": "Nick Baugh <niftylettuce@gmail.com> (http://niftylettuce.com/)",
+  "bugs": {
+    "url": "https://github.com/niftylettuce/parse-request/issues",
+    "email": "niftylettuce@gmail.com"
+  },
+  "contributors": [
+    "Nick Baugh <niftylettuce@gmail.com> (http://niftylettuce.com/)"
+  ],
+  "dependencies": {
+    "cookie": "^0.3.1",
+    "fast-safe-stringify": "^2.0.4",
+    "lodash": "^4.17.10",
+    "url-parse": "^1.4.1"
+  },
+  "ava": {
+    "failFast": true,
+    "verbose": true
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.0.0-beta.51",
+    "@babel/core": "^7.0.0-beta.51",
+    "@babel/preset-env": "^7.0.0-beta.51",
+    "ava": "^0.22.0",
+    "babelify": "^9.0.0",
+    "browserify": "^16.2.2",
+    "caniuse-lite": "^1.0.30000858",
+    "codecov": "^2.3.0",
+    "cross-env": "^5.0.5",
+    "eslint": "^4.19.1",
+    "eslint-config-prettier": "^2.9.0",
+    "eslint-plugin-compat": "^2.4.0",
+    "eslint-plugin-prettier": "^2.6.1",
+    "husky": "^0.14.3",
+    "lint-staged": "^4.0.4",
+    "nyc": "^11.1.0",
+    "prettier": "^1.6.1",
+    "remark-cli": "^4.0.0",
+    "remark-preset-github": "^0.0.6",
+    "rimraf": "^2.6.2",
+    "tinyify": "^2.4.3",
+    "xo": "^0.21.1"
+  },
+  "engines": {
+    "node": ">=6.4"
+  },
+  "homepage": "https://github.com/niftylettuce/parse-request",
+  "keywords": [
+    "parse",
+    "request",
+    "lass",
+    "lad",
+    "koa",
+    "logger",
+    "passport",
+    "auth",
+    "authentication",
+    "logging",
+    "req",
+    "express",
+    "connect",
+    "user",
+    "object",
+    "headers",
+    "normalized",
+    "consistent",
+    "browser",
+    "node"
+  ],
+  "license": "MIT",
+  "lint-staged": {
+    "*.{js,jsx,mjs,ts,tsx,css,less,scss,json,graphql}": [
+      "prettier --write --single-quote --trailing-comma none",
+      "git add"
+    ],
+    "*.md": [
+      "remark . -qfo",
+      "git add"
+    ]
+  },
+  "main": "lib/index.js",
+  "browser": "dist/parse-request.js",
+  "unpkg": "dist/parse-request.min.js",
+  "files": [
+    "lib",
+    "dist"
+  ],
+  "remarkConfig": {
+    "plugins": [
+      "preset-github"
+    ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/niftylettuce/parse-request"
+  },
+  "xo": {
+    "extends": "prettier",
+    "plugins": [
+      "prettier"
+    ],
+    "parserOptions": {
+      "sourceType": "script"
+    },
+    "envs": [
+      "browser",
+      "node"
+    ],
+    "rules": {
+      "prettier/prettier": [
+        "error",
+        {
+          "singleQuote": true,
+          "bracketSpacing": true,
+          "trailingComma": "none"
+        }
+      ],
+      "max-len": [
+        "error",
+        {
+          "code": 80,
+          "ignoreUrls": true
+        }
+      ],
+      "capitalized-comments": "off",
+      "camelcase": "off",
+      "no-warning-comments": "off"
+    },
+    "space": true
+  },
+  "scripts": {
+    "coverage": "nyc report --reporter=text-lcov > coverage.lcov && codecov",
+    "lint": "xo && remark . -qfo && eslint lib && eslint dist",
+    "precommit": "lint-staged && npm test",
+    "test": "npm run build && npm run lint && npm run ava",
+    "test-coverage": "npm run build && npm run lint && npm run nyc",
+    "ava": "cross-env NODE_ENV=test ava",
+    "nyc": "cross-env NODE_ENV=test nyc ava",
+    "build": "npm run build:clean && npm run build:lib && npm run build:dist",
+    "build:clean": "rimraf lib dist",
+    "build:lib": "babel src --out-dir lib",
+    "build:dist": "npm run browserify && npm run minify",
+    "browserify": "browserify src/index.js -o dist/parse-request.js -s parseRequest -d -t babelify",
+    "minify": "cross-env NODE_ENV=production browserify src/index.js -o dist/parse-request.min.js -s parseRequest -d -t babelify -p tinyify"
+  }
+}
