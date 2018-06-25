@@ -1,7 +1,7 @@
 {
   "name": "parse-request",
   "description": "Parse requests in the Browser and Node (with added support for Passport). Made for Cabin.",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "author": "Nick Baugh <niftylettuce@gmail.com> (http://niftylettuce.com/)",
   "bugs": {
     "url": "https://github.com/niftylettuce/parse-request/issues",
