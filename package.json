@@ -82,7 +82,6 @@
     ]
   },
   "main": "lib/index.js",
-  "browser": "dist/parse-request.js",
   "unpkg": "dist/parse-request.min.js",
   "files": [
     "lib",
