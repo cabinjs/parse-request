@@ -128,7 +128,7 @@ app.get('/', (req, res, next) => {
 [MIT](LICENSE) © [Nick Baugh](http://niftylettuce.com/)
 
 
-##
+## 
 
 [npm]: https://www.npmjs.com/
 
