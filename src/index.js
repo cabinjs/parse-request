@@ -1,15 +1,16 @@
-const URLParse = require('url-parse');
+const Url = require('url-parse');
 const cookie = require('cookie');
 const safeStringify = require('fast-safe-stringify');
 // <https://lacke.mn/reduce-your-bundle-js-file-size/>
 // <https://github.com/lodash/babel-plugin-lodash/issues/221>
+const pick = require('lodash/pick');
 const isString = require('lodash/isString');
 const isObject = require('lodash/isObject');
+const clone = require('lodash/clone');
 const cloneDeep = require('lodash/cloneDeep');
 const isUndefined = require('lodash/isUndefined');
 const isNull = require('lodash/isNull');
 const isFunction = require('lodash/isFunction');
-const pick = require('lodash/pick');
 const isEmpty = require('lodash/isEmpty');
 const isArray = require('lodash/isArray');
 
@@ -18,7 +19,27 @@ const hasWindow =
 
 // inspired by raven's parseRequest
 // eslint-disable-next-line complexity
-const parseRequest = (req = {}, userFields = []) => {
+const parseRequest = (
+  originalReq = {},
+  userFields = ['id', 'email', 'full_name']
+) => {
+  const req = cloneDeep(
+    pick(originalReq, [
+      'method',
+      'query',
+      'header',
+      'headers',
+      'cookies',
+      'originalUrl',
+      'url',
+      'ip',
+      'connection'
+    ])
+  );
+
+  if (Object.prototype.hasOwnProperty.call(req, 'hostname') && originalReq.host)
+    req.host = clone(originalReq.host);
+
   const headers = req.headers || req.header || {};
   const method = req.method || 'GET';
 
@@ -29,24 +50,24 @@ const parseRequest = (req = {}, userFields = []) => {
   else if (hasWindow)
     originalUrl = window.location.pathname + window.location.search;
 
-  originalUrl = new URLParse(originalUrl);
+  originalUrl = new Url(originalUrl);
 
-  // parse query, path, and origin to prepare absolute URLParse
+  // parse query, path, and origin to prepare absolute Url
   const query = isObject(req.query)
     ? req.query
-    : URLParse.qs.parse(originalUrl.query);
+    : Url.qs.parse(originalUrl.query);
   const path =
     originalUrl.origin === 'null'
       ? originalUrl.pathname
       : `${originalUrl.origin}${originalUrl.pathname}`;
-  const qs = URLParse.qs.stringify(query, true);
+  const qs = Url.qs.stringify(query, true);
   const absoluteUrl = path + qs;
 
   // default to the user object
-  let user = isObject(req.user)
-    ? isFunction(req.user.toObject)
-      ? req.user.toObject()
-      : cloneDeep(req.user)
+  let user = isObject(originalReq.user)
+    ? isFunction(originalReq.user.toObject)
+      ? originalReq.user.toObject()
+      : clone(originalReq.user)
     : {};
 
   let ip = '';
@@ -60,8 +81,8 @@ const parseRequest = (req = {}, userFields = []) => {
 
   let body = '';
 
-  if (!['GET', 'HEAD'].includes(method) && !isUndefined(req.body))
-    ({ body } = req);
+  if (!['GET', 'HEAD'].includes(method) && !isUndefined(originalReq.body))
+    ({ body } = originalReq);
 
   if (!isUndefined(body) && !isNull(body) && !isString(body))
     body = safeStringify(body);

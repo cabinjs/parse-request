@@ -1,11 +1,11 @@
 # parse-request
 
-[![build status](https://img.shields.io/travis/niftylettuce/parse-request.svg)](https://travis-ci.org/niftylettuce/parse-request)
-[![code coverage](https://img.shields.io/codecov/c/github/niftylettuce/parse-request.svg)](https://codecov.io/gh/niftylettuce/parse-request)
+[![build status](https://img.shields.io/travis/cabinjs/parse-request.svg)](https://travis-ci.org/cabinjs/parse-request)
+[![code coverage](https://img.shields.io/codecov/c/github/cabinjs/parse-request.svg)](https://codecov.io/gh/cabinjs/parse-request)
 [![code style](https://img.shields.io/badge/code_style-XO-5ed9c7.svg)](https://github.com/sindresorhus/xo)
 [![styled with prettier](https://img.shields.io/badge/styled_with-prettier-ff69b4.svg)](https://github.com/prettier/prettier)
 [![made with lass](https://img.shields.io/badge/made_with-lass-95CC28.svg)](https://lass.js.org)
-[![license](https://img.shields.io/github/license/niftylettuce/parse-request.svg)](LICENSE)
+[![license](https://img.shields.io/github/license/cabinjs/parse-request.svg)](LICENSE)
 
 > Parse requests in the Browser and Node (with added support for [Passport][]). Made for [Cabin][].
 
@@ -42,7 +42,7 @@ yarn add parse-request
 This package exports a function that accepts two arguments `(req, userFields)`.
 
 * `req` (Object) - an HTTP request
-* `userFields` (Array) - a list of fields to cherry-pick from the user object parsed out of `req.user` (by default all fields are returned)
+* `userFields` (Array) - defaults to `[ 'id', 'email', 'full_name']`, list of fields to cherry-pick from the user object parsed out of `req.user`
 
 It automatically detects whether the request is from the Browser, Koa, or Express, and return a parsed object with these fields populated:
 
