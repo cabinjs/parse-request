@@ -42,7 +42,7 @@ yarn add parse-request
 This package exports a function that accepts two arguments `(req, userFields)`.
 
 * `req` (Object) - an HTTP request
-* `userFields` (Array) - defaults to `[ 'id', 'email', 'full_name']`, list of fields to cherry-pick from the user object parsed out of `req.user`
+* `userFields` (Array) - defaults to `[ 'id', 'email', 'full_name', 'ip_address' ]`, list of fields to cherry-pick from the user object parsed out of `req.user`
 
 It automatically detects whether the request is from the Browser, Koa, or Express, and return a parsed object with these fields populated:
 
@@ -128,7 +128,7 @@ app.get('/', (req, res, next) => {
 [MIT](LICENSE) © [Nick Baugh](http://niftylettuce.com/)
 
 
-## 
+##
 
 [npm]: https://www.npmjs.com/
 

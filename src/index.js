@@ -21,7 +21,7 @@ const hasWindow =
 // eslint-disable-next-line complexity
 const parseRequest = (
   originalReq = {},
-  userFields = ['id', 'email', 'full_name']
+  userFields = ['id', 'email', 'full_name', 'ip_address']
 ) => {
   const req = cloneDeep(
     pick(originalReq, [
