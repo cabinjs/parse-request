@@ -13,9 +13,20 @@ const isNull = require('lodash/isNull');
 const isFunction = require('lodash/isFunction');
 const isEmpty = require('lodash/isEmpty');
 const isArray = require('lodash/isArray');
+const mapValues = require('lodash/mapValues');
 
 const hasWindow =
   typeof window !== 'undefined' && typeof window.document !== 'undefined';
+
+// https://stackoverflow.com/a/39087474
+function maskPasswords(obj) {
+  return mapValues(obj, (val, key) => {
+    if (isObject(val)) return maskPasswords(val);
+    return key === 'password' && isString(val)
+      ? new Array(val.length + 1).join('*')
+      : val;
+  });
+}
 
 // inspired by raven's parseRequest
 // eslint-disable-next-line complexity
@@ -82,7 +93,12 @@ const parseRequest = (
   let body = '';
 
   if (!['GET', 'HEAD'].includes(method) && !isUndefined(originalReq.body))
-    ({ body } = originalReq);
+    body = isString(originalReq.body)
+      ? clone(originalReq.body)
+      : cloneDeep(originalReq.body);
+
+  // recursively search through body and filter out passwords from it
+  if (isObject(body)) body = maskPasswords(body);
 
   if (!isUndefined(body) && !isNull(body) && !isString(body))
     body = safeStringify(body);
