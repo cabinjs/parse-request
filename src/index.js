@@ -15,9 +15,6 @@ const isEmpty = require('lodash/isEmpty');
 const isArray = require('lodash/isArray');
 const mapValues = require('lodash/mapValues');
 
-const hasWindow =
-  typeof window !== 'undefined' && typeof window.document !== 'undefined';
-
 // https://stackoverflow.com/a/39087474
 function maskPasswords(obj) {
   return mapValues(obj, (val, key) => {
@@ -38,8 +35,6 @@ const parseRequest = (
     pick(originalReq, [
       'method',
       'query',
-      'header',
-      'headers',
       'cookies',
       'originalUrl',
       'url',
@@ -51,14 +46,16 @@ const parseRequest = (
   if (Object.prototype.hasOwnProperty.call(req, 'hostname') && originalReq.host)
     req.host = clone(originalReq.host);
 
-  const headers = req.headers || req.header || {};
+  const headers = JSON.parse(
+    safeStringify(originalReq.headers || originalReq.header || {})
+  );
   const method = req.method || 'GET';
 
   // inspired from `preserve-qs` package
   let originalUrl = '';
   if (isString(req.originalUrl)) ({ originalUrl } = req);
   else if (isString(req.url)) originalUrl = req.url;
-  else if (hasWindow)
+  else if (process.browser)
     originalUrl = window.location.pathname + window.location.search;
 
   originalUrl = new Url(originalUrl);
@@ -105,7 +102,7 @@ const parseRequest = (
 
   // populate user agent and referrer if
   // we're in a browser and they're unset
-  if (hasWindow) {
+  if (process.browser) {
     // set user agent
     if (
       typeof window.navigator !== 'undefined' &&
