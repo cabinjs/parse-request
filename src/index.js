@@ -97,7 +97,7 @@ const parseRequest = (
     user = pick(user, userFields);
 
   let body = '';
-  const originalBody = originalReq._body || originalReq.body;
+  const originalBody = originalReq._originalBody || originalReq.body;
 
   if (!['GET', 'HEAD'].includes(method) && !isUndefined(originalBody))
     body = isString(originalBody)
