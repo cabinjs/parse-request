@@ -16,10 +16,10 @@ const isArray = require('lodash/isArray');
 const mapValues = require('lodash/mapValues');
 
 // https://stackoverflow.com/a/39087474
-function maskPasswords(obj) {
+function maskPasswords(obj, sanitizeFields) {
   return mapValues(obj, (val, key) => {
-    if (isObject(val)) return maskPasswords(val);
-    return key === 'password' && isString(val)
+    if (isObject(val)) return maskPasswords(val, sanitizeFields);
+    return sanitizeFields.includes(key) && isString(val)
       ? new Array(val.length + 1).join('*')
       : val;
   });
@@ -29,7 +29,16 @@ function maskPasswords(obj) {
 // eslint-disable-next-line complexity
 const parseRequest = (
   originalReq = {},
-  userFields = ['id', 'email', 'full_name', 'ip_address']
+  userFields = ['id', 'email', 'full_name', 'ip_address'],
+  sanitizeFields = [
+    'password',
+    'password_confirm',
+    'passwordConfirm',
+    'confirm_password',
+    'confirmPassword',
+    'csrf',
+    '_csrf'
+  ]
 ) => {
   const req = cloneDeep(
     pick(originalReq, [
@@ -88,14 +97,15 @@ const parseRequest = (
     user = pick(user, userFields);
 
   let body = '';
+  const originalBody = originalReq._body || originalReq.body;
 
-  if (!['GET', 'HEAD'].includes(method) && !isUndefined(originalReq.body))
-    body = isString(originalReq.body)
-      ? clone(originalReq.body)
-      : cloneDeep(originalReq.body);
+  if (!['GET', 'HEAD'].includes(method) && !isUndefined(originalBody))
+    body = isString(originalBody)
+      ? clone(originalBody)
+      : cloneDeep(originalBody);
 
   // recursively search through body and filter out passwords from it
-  if (isObject(body)) body = maskPasswords(body);
+  if (isObject(body)) body = maskPasswords(body, sanitizeFields);
 
   if (!isUndefined(body) && !isNull(body) && !isString(body))
     body = safeStringify(body);
