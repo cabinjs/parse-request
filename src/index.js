@@ -66,13 +66,10 @@ const parseRequest = (
   else if (isString(req.url)) originalUrl = req.url;
   else if (process.browser)
     originalUrl = window.location.pathname + window.location.search;
-
   originalUrl = new Url(originalUrl);
 
   // parse query, path, and origin to prepare absolute Url
-  const query = isObject(req.query)
-    ? req.query
-    : Url.qs.parse(originalUrl.query);
+  const query = Url.qs.parse(originalUrl.query);
   const path =
     originalUrl.origin === 'null'
       ? originalUrl.pathname
