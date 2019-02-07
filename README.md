@@ -66,7 +66,7 @@ Note that there is a `user` object returned, which will be parsed from `req.user
 
 The `user` object will also have a `ip_address` property added, but only if one does not already exists and if an IP address was actually detected.
 
-Also note that this function will mask passwords and commonly used sensitive field names, so a `req.body.password` property with a value of `foobar123` will become `*********`.
+Also note that this function will mask passwords and commonly used sensitive field names, so a `req.body.password` or a `req.user.password` property with a value of `foobar123` will become `*********`.
 
 See [Sensitive Field Names Automatically Masked](#sensitive-field-names-automatically-masked) below for the complete list.
 

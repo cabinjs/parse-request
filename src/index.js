@@ -28,7 +28,7 @@ function maskPasswords(obj, sanitizeFields) {
 // inspired by raven's parseRequest
 // eslint-disable-next-line complexity
 const parseRequest = (
-  originalReq = {},
+  req = {},
   userFields = ['id', 'email', 'full_name', 'ip_address'],
   sanitizeFields = [
     'password',
@@ -40,24 +40,7 @@ const parseRequest = (
     '_csrf'
   ]
 ) => {
-  const req = cloneDeep(
-    pick(originalReq, [
-      'method',
-      'query',
-      'cookies',
-      'originalUrl',
-      'url',
-      'ip',
-      'connection'
-    ])
-  );
-
-  if (Object.prototype.hasOwnProperty.call(req, 'hostname') && originalReq.host)
-    req.host = clone(originalReq.host);
-
-  const headers = JSON.parse(
-    safeStringify(originalReq.headers || originalReq.header || {})
-  );
+  const headers = req.headers || req.header || {};
   const method = req.method || 'GET';
 
   // inspired from `preserve-qs` package
@@ -78,10 +61,10 @@ const parseRequest = (
   const absoluteUrl = path + qs;
 
   // default to the user object
-  let user = isObject(originalReq.user)
-    ? isFunction(originalReq.user.toObject)
-      ? originalReq.user.toObject()
-      : clone(originalReq.user)
+  let user = isObject(req.user)
+    ? isFunction(req.user.toObject)
+      ? req.user.toObject()
+      : clone(req.user)
     : {};
 
   let ip = '';
@@ -93,8 +76,11 @@ const parseRequest = (
   if (isArray(userFields) && !isEmpty(userFields))
     user = pick(user, userFields);
 
+  // recursively search through user and filter out passwords from it
+  user = maskPasswords(user, sanitizeFields);
+
   let body = '';
-  const originalBody = originalReq._originalBody || originalReq.body;
+  const originalBody = req._originalBody || req.body;
 
   if (!['GET', 'HEAD'].includes(method) && !isUndefined(originalBody))
     body = isString(originalBody)
