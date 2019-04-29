@@ -12,35 +12,80 @@ const isUndefined = require('lodash/isUndefined');
 const isNull = require('lodash/isNull');
 const isFunction = require('lodash/isFunction');
 const isEmpty = require('lodash/isEmpty');
+const isFinite = require('lodash/isFinite');
 const isArray = require('lodash/isArray');
 const mapValues = require('lodash/mapValues');
+const creditCardType = require('credit-card-type');
+const sensitiveFields = require('sensitive-fields');
+
+// <https://github.com/braintree/credit-card-type/issues/90>
+function isCreditCard(val) {
+  const digits = val.replace(/\D/g, '');
+  const types = creditCardType(digits);
+  if (!isArray(types) || isEmpty(types)) return false;
+  let match = false;
+  for (let t = 0; t < types.length; t++) {
+    if (match) break;
+    const type = types[t];
+    // can match any one of the lengths
+    if (!isArray(type.lengths) || isEmpty(type.lengths)) continue;
+    for (let l = 0; l < type.lengths.length; l++) {
+      const len = type.lengths[l];
+      if (isFinite(len) && len === digits.length) {
+        match = true;
+        break;
+      }
+    }
+  }
+
+  return match;
+}
 
 // https://stackoverflow.com/a/39087474
-function maskPasswords(obj, sanitizeFields) {
+function maskProps(obj, props, maskCreditCards = true, isHeaders = false) {
   return mapValues(obj, (val, key) => {
-    if (isObject(val)) return maskPasswords(val, sanitizeFields);
-    return sanitizeFields.includes(key) && isString(val)
-      ? new Array(val.length + 1).join('*')
-      : val;
+    if (isObject(val)) return maskProps(val, props, maskCreditCards, isHeaders);
+    if (!isString(val)) return val;
+    // if it was a credit card then replace all digits with asterisk
+    if (!isHeaders && maskCreditCards && isCreditCard(val))
+      return val.replace(/[^\D\s]/g, '*');
+    if (!props.includes(key)) return val;
+    // replace only the authentication <credentials> portion with asterisk
+    // Authorization: <type> <credentials>
+    if (isHeaders && key === 'Authorization')
+      return `${val.split(' ')[0]} ${val
+        .substring(val.indexOf(' ') + 1)
+        .replace(/./g, '*')}`;
+    return val.replace(/./g, '*');
   });
 }
 
 // inspired by raven's parseRequest
 // eslint-disable-next-line complexity
-const parseRequest = (
-  req = {},
-  userFields = ['id', 'email', 'full_name', 'ip_address'],
-  sanitizeFields = [
-    'password',
-    'password_confirm',
-    'passwordConfirm',
-    'confirm_password',
-    'confirmPassword',
-    'csrf',
-    '_csrf'
-  ]
-) => {
-  const headers = req.headers || req.header || {};
+const parseRequest = (config = {}) => {
+  config = {
+    req: {},
+    userFields: ['id', 'email', 'full_name', 'ip_address'],
+    sanitizeFields: sensitiveFields,
+    sanitizeHeaders: ['Authorization'],
+    maskCreditCards: true,
+    ...config
+  };
+
+  const {
+    req,
+    userFields,
+    sanitizeFields,
+    sanitizeHeaders,
+    maskCreditCards
+  } = config;
+
+  const headers = maskProps(
+    req.headers || req.header || {},
+    sanitizeHeaders,
+    maskCreditCards,
+    true
+  );
   const method = req.method || 'GET';
 
   // inspired from `preserve-qs` package
@@ -77,7 +122,7 @@ const parseRequest = (
     user = pick(user, userFields);
 
   // recursively search through user and filter out passwords from it
-  user = maskPasswords(user, sanitizeFields);
+  user = maskProps(user, sanitizeFields, maskCreditCards);
 
   let body = '';
   const originalBody = req._originalBody || req.body;
@@ -88,7 +133,7 @@ const parseRequest = (
       : cloneDeep(originalBody);
 
   // recursively search through body and filter out passwords from it
-  if (isObject(body)) body = maskPasswords(body, sanitizeFields);
+  if (isObject(body)) body = maskProps(body, sanitizeFields, maskCreditCards);
 
   if (!isUndefined(body) && !isNull(body) && !isString(body))
     body = safeStringify(body);
