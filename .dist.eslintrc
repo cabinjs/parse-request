@@ -1,0 +1,24 @@
+{
+  "extends": ["eslint:recommended"],
+  "env": {
+    "node": false,
+    "browser": true,
+    "amd": true,
+    "es6": true
+  },
+  "plugins": ["compat"],
+  "rules": {
+    "compat/compat": "error",
+    "no-cond-assign": "off",
+    "no-control-regex": "off",
+    "no-empty": "off",
+    "no-fallthrough": "off",
+    "no-undef": "off",
+    "no-unused-vars": "off"
+  },
+  "settings": {
+    "polyfills": [
+      "Object.getOwnPropertySymbols"
+    ]
+  }
+}
