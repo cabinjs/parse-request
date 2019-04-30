@@ -24,7 +24,7 @@
     "credit-card-type": "^8.2.0",
     "fast-safe-stringify": "^2.0.6",
     "lodash": "^4.17.11",
-    "sensitive-fields": "^0.0.1",
+    "sensitive-fields": "^0.0.2",
     "url-parse": "^1.4.7"
   },
   "devDependencies": {

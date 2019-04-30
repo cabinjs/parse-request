@@ -6567,7 +6567,7 @@ remark-heading-gap@^3.0.0:
   resolved "https://registry.yarnpkg.com/remark-heading-gap/-/remark-heading-gap-3.1.0.tgz#6a1851b4226fa82441ae1365bbd599d34b12d812"
   integrity sha512-KxH9CTgfDnVTZVMMLJRw73zxZSWGX+p6x/trG7ed2UsEYqMRr8Dqtu/SXp2vD1ZZhPM8CpS7SjS+qjmiaRFotw==
 
-"remark-license@github:niftylettuce/remark-license":
+remark-license@niftylettuce/remark-license:
   version "4.0.1"
   resolved "https://codeload.github.com/niftylettuce/remark-license/tar.gz/17ecb8f64f8f6082414d14f9267a12764e6ddbfb"
   dependencies:
@@ -7526,10 +7526,10 @@ semver@^6.0.0:
   resolved "https://registry.yarnpkg.com/semver/-/semver-6.0.0.tgz#05e359ee571e5ad7ed641a6eec1e547ba52dea65"
   integrity sha512-0UewU+9rFapKFnlbirLi3byoOuhrSsli/z/ihNnvM24vgF+8sNBiI1LZPBSH9wJKUwaUbw+s3hToDLCXkrghrQ==
 
-sensitive-fields@^0.0.1:
-  version "0.0.1"
-  resolved "https://registry.yarnpkg.com/sensitive-fields/-/sensitive-fields-0.0.1.tgz#aa7672187a95a6a3358dd0cbf1c856a88cc80c43"
-  integrity sha512-13TV9oyMyKrYkOs1s2ah+eU3KeyasyIM10UTdSreqwoRYd9lwGqDTd/YlV5FHOOfB4wMqiEFyprdymMoWSCTBw==
+sensitive-fields@^0.0.2:
+  version "0.0.2"
+  resolved "https://registry.yarnpkg.com/sensitive-fields/-/sensitive-fields-0.0.2.tgz#16cd07ede4decc25429dc2a9e9365f1649d9e862"
+  integrity sha512-zy2H04jIKu84sty0dD8+5GxM3xszX4VrciQ1o/wdS4f1nPFVLdA/UDZceefM7y3f5yvusRbwoCBI2MiGG9aOwQ==
   dependencies:
     lodash "^4.17.11"
     underscore.string "^3.3.5"
