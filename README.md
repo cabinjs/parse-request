@@ -111,7 +111,7 @@ We highly recommend to simply use [Cabin][] as this package is built-in!
 The example below uses [xhook][] which is used to intercept HTTP requests made in the browser.
 
 ```html
-<script src="https://polyfill.io/v3/polyfill.min.js?features=Number.isFinite,Object.getOwnPropertySymbols,Symbol.iterator,Symbol.prototype"></script>
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6,Number.isFinite,Object.getOwnPropertySymbols,Symbol.iterator,Symbol.prototype"></script>
 <script src="https://unpkg.com/xhook"></script>
 <script src="https://unpkg.com/parse-request"></script>
 <script type="text/javascript">
@@ -130,7 +130,7 @@ The example below uses [xhook][] which is used to intercept HTTP requests made i
 We recommend using <https://polyfill.io> (specifically with the bundle mentioned in [VanillaJS](#vanillajs) above):
 
 ```html
-<script src="https://polyfill.io/v3/polyfill.min.js?features=Number.isFinite,Object.getOwnPropertySymbols,Symbol.iterator,Symbol.prototype"></script>
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6,Number.isFinite,Object.getOwnPropertySymbols,Symbol.iterator,Symbol.prototype"></script>
 ```
 
 * Number.isFinite() is not supported in IE 10
