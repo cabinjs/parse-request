@@ -2,9 +2,15 @@
   "extends": ["eslint:recommended", "plugin:node/recommended"],
   "env": { "browser": true" },
   "plugins": ["compat"],
-  "rules": { "compat/compat": "error" },
+  "rules": {
+    "compat/compat": "error",
+    "no-func-assign": "off"
+  },
   "settings": {
     "polyfills": [
+      "Symbol.iterator",
+      "Symbol.prototype",
+      "Number.isFinite",
       "Object.getOwnPropertySymbols"
     ]
   }

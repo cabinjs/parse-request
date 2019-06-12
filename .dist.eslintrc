@@ -4,21 +4,24 @@
     "node": false,
     "browser": true,
     "amd": true,
-    "es6": true
+    "es6": true,
+    "commonjs": true
   },
   "plugins": ["compat"],
   "rules": {
     "compat/compat": "error",
+    "no-func-assign": "off",
+    "no-unused-vars": "off",
     "no-cond-assign": "off",
     "no-control-regex": "off",
-    "no-empty": "off",
-    "no-fallthrough": "off",
-    "no-undef": "off",
-    "no-unused-vars": "off"
+    "no-unsafe-finally": "off"
   },
   "settings": {
     "polyfills": [
-      "Object.getOwnPropertySymbols"
+      "Number.isFinite",
+      "Object.getOwnPropertySymbols",
+      "Symbol.iterator",
+      "Symbol.prototype"
     ]
   }
 }

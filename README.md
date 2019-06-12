@@ -7,7 +7,7 @@
 [![made with lass](https://img.shields.io/badge/made_with-lass-95CC28.svg)](https://lass.js.org)
 [![license](https://img.shields.io/github/license/cabinjs/parse-request.svg)](LICENSE)
 
-> Parse requests in the Browser and Node (with added support for [Passport][]). Made for [Cabin][].
+> Parse requests in the Browser and Node (with added support for [multer][] and [passport][]). Made for [Cabin][].
 
 
 ## Table of Contents
@@ -49,6 +49,15 @@ This package exports a function that accepts an Object argument with options:
 * `sanitizeFields` (Array) - defaults to the list of Strings provided under [Sensitive Field Names Automatically Masked](#sensitive-field-names-automatically-masked) below
 * `sanitizeHeaders` (Array) - defaults to the list of Strings provided under [Sensitive Header Names Automatically Masked](#sensitive-header-names-automatically-masked) below
 * `maskCreditCards` (Boolean) - defaults to `true`, and specifies whether or not credit card numbers are masked
+* `maskBuffers` (Boolean) - defaults to `true`, and will rewrite `Buffer`'s, `ArrayBuffer`'s, and `SharedArrayBuffer`'s recursively as an object of `{ type: <String>, byteLength: <Number> }`.  Note that this will save you on disk log storage size as logs will not output verbose stringified buffers – e.g. imagine a 10MB file image upload sent across the request body as a Buffer!)
+* `maskStreams` (Boolean) - defauls to `true`, and will rewrite `Stream`'s to `{ type: 'Stream' }` (this is useful for those using multer v2.x (streams version), or those that have streams in `req.body`, `req.file`, or `req.files`)
+* `checkId` (Boolean) - defaults to `true`, and prevents Strings that closely resemble primary key ID's from being masked (e.g. properties named `_id`, `id`, `ID`, `product_id`, `product-id`, `productId`, `productID`, and `product[id]` won't get masked or show as a false-positive for a credit card check)
+* `checkCuid` (Boolean) - defaults to `true`, and prevents [cuid][] values from being masked
+* `checkObjectId` (Boolean) - defaults to `true`, and prevents [MongoDB BSON ObjectId][bson-objectid] from being masked
+* `checkUUID` (Boolean) - defaults to `true`, and prevents [uuid][] values from being masked
+* `rfdc` (Object) - defaults to `{ proto: false, circles: false }` (you should not need to customize this, but if necessary refer to [rfdc][] documentation)
+* `parseBody` (Boolean) - defaults to `true`, if you set to `false` we will not parse nor clone the request `body` property (this overrides all other parsing settings related)
+* `parseFiles` (Boolean) - defaults to `true`, if you set to `false` we will not parse nor clone the request `file` nor `files` properties (this overrides all other parsing settings related)
 
 It automatically detects whether the request is from the Browser, Koa, or Express, and return a parsed object with these fields populated:
 
@@ -66,7 +75,9 @@ It automatically detects whether the request is from the Browser, Koa, or Expres
 }
 ```
 
-Note that there is a `user` object returned, which will be parsed from `req.user` automatically.
+Two additional (conditionally) added properties will appear if you are using [multer][] or utilizing `req.file` or `req.files` in your application.  The two properties are `file` and `files` respectively, and are only added if they exist on the original request object.
+
+Note that there is a `user` object returned, which will be parsed from `req.user` automatically for you.
 
 The `user` object will also have a `ip_address` property added, but only if one does not already exists and if an IP address was actually detected.
 
@@ -95,10 +106,12 @@ We highly recommend to simply use [Cabin][] as this package is built-in!
 
 ### VanillaJS
 
+**The browser-ready bundle is only 17 KB (minified and gzipped)**.
+
 The example below uses [xhook][] which is used to intercept HTTP requests made in the browser.
 
 ```html
-<script src="https://polyfill.io/v3/polyfill.min.js?features=Object.getOwnPropertySymbols"></script>
+<script src="https://polyfill.io/v3/polyfill.min.js?features=Number.isFinite,Object.getOwnPropertySymbols,Symbol.iterator,Symbol.prototype"></script>
 <script src="https://unpkg.com/xhook"></script>
 <script src="https://unpkg.com/parse-request"></script>
 <script type="text/javascript">
@@ -117,10 +130,13 @@ The example below uses [xhook][] which is used to intercept HTTP requests made i
 We recommend using <https://polyfill.io> (specifically with the bundle mentioned in [VanillaJS](#vanillajs) above):
 
 ```html
-<script src="https://polyfill.io/v3/polyfill.min.js?features=Object.getOwnPropertySymbols"></script>
+<script src="https://polyfill.io/v3/polyfill.min.js?features=Number.isFinite,Object.getOwnPropertySymbols,Symbol.iterator,Symbol.prototype"></script>
 ```
 
-* IE 10 requires a polyfill for `Object.getOwnPropertySymbols`
+* Number.isFinite() is not supported in IE 10
+* Object.getOwnPropertySymbols() is not supported in IE 10
+* Symbol.iterator() is not supported in IE 10
+* Symbol.prototype() is not supported in IE 10
 
 ### Koa
 
@@ -178,3 +194,13 @@ app.get('/', (req, res, next) => {
 [credit-card-type]: https://github.com/braintree/credit-card-type
 
 [sensitive-fields]: https://github.com/cabinjs/sensitive-fields
+
+[cuid]: https://github.com/ericelliott/cuid
+
+[bson-objectid]: https://docs.mongodb.com/manual/reference/method/ObjectId/
+
+[uuid]: https://github.com/kelektiv/node-uuid#uuid-
+
+[multer]: https://github.com/expressjs/multer
+
+[rfdc]: https://github.com/davidmarkclements/rfdc
