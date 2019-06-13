@@ -23,6 +23,9 @@
     "Nick Baugh <niftylettuce@gmail.com> (http://niftylettuce.com/)"
   ],
   "dependencies": {
+    "browser-process-hrtime": "^1.0.0",
+    "bson-objectid": "^1.2.5",
+    "convert-hrtime": "^3.0.0",
     "cookie": "^0.4.0",
     "credit-card-type": "^8.2.0",
     "fast-safe-stringify": "^2.0.6",
@@ -30,11 +33,11 @@
     "is-buffer": "^2.0.3",
     "is-stream": "^2.0.0",
     "is-uuid": "^1.0.2",
+    "ms": "^2.1.2",
     "no-case": "^2.3.2",
     "rfdc": "^1.1.4",
     "sensitive-fields": "^0.0.2",
-    "url-parse": "^1.4.7",
-    "validate-objectid": "^0.2.0"
+    "url-parse": "^1.4.7"
   },
   "devDependencies": {
     "@babel/cli": "^7.4.4",
@@ -45,7 +48,6 @@
     "ava": "^2.1.0",
     "babelify": "^10.0.0",
     "browserify": "^16.2.3",
-    "bson-objectid": "^1.2.5",
     "codecov": "^3.5.0",
     "cross-env": "^5.2.0",
     "eslint": "^5.16.0",

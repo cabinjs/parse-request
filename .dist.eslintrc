@@ -14,14 +14,16 @@
     "no-unused-vars": "off",
     "no-cond-assign": "off",
     "no-control-regex": "off",
-    "no-unsafe-finally": "off"
+    "no-unsafe-finally": "off",
+    "no-extra-semi": "off"
   },
   "settings": {
     "polyfills": [
       "Number.isFinite",
       "Object.getOwnPropertySymbols",
       "Symbol.iterator",
-      "Symbol.prototype"
+      "Symbol.prototype",
+      "Symbol.for"
     ]
   }
 }

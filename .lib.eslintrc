@@ -11,7 +11,8 @@
       "Symbol.iterator",
       "Symbol.prototype",
       "Number.isFinite",
-      "Object.getOwnPropertySymbols"
+      "Object.getOwnPropertySymbols",
+      "Symbol.for"
     ]
   }
 }

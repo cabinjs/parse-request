@@ -1,15 +1,22 @@
+const ObjectId = require('bson-objectid');
 const Url = require('url-parse');
+const convertHrtime = require('convert-hrtime');
 const cookie = require('cookie');
 const creditCardType = require('credit-card-type');
+const hrtime = require('browser-process-hrtime');
 const isArrayBuffer = require('is-array-buffer');
 const isBuffer = require('is-buffer');
+const isStream = require('is-stream');
 const isUUID = require('is-uuid');
-const objectId = require('validate-objectid');
+const ms = require('ms');
+const noCase = require('no-case');
 const rfdc = require('rfdc');
 const safeStringify = require('fast-safe-stringify');
 const sensitiveFields = require('sensitive-fields');
-const isStream = require('is-stream');
-const noCase = require('no-case');
+
+// https://github.com/cabinjs/request-received
+const startTime = Symbol.for('request-received.startTime');
+const pinoHttpStartTime = Symbol.for('pino-http.startTime');
 
 const hashMapIds = {
   _id: true,
@@ -17,6 +24,15 @@ const hashMapIds = {
 };
 
 const regexId = /_id$/;
+
+function maskArray(obj, options) {
+  const arr = [];
+  for (let i = 0; i < obj.length; i++) {
+    arr[i] = maskSpecialTypes(obj[i], options);
+  }
+
+  return arr;
+}
 
 function maskSpecialTypes(obj, options) {
   options = {
@@ -28,17 +44,15 @@ function maskSpecialTypes(obj, options) {
   if (typeof obj !== 'object') return obj;
 
   // we need to return an array if passed an array
-  if (Array.isArray(obj)) {
-    const arr = [];
-    for (let i = 0; i < obj.length; i++) {
-      arr[i] = maskSpecialTypes(obj[i], options);
-    }
-
-    return arr;
-  }
+  if (Array.isArray(obj)) return maskArray(obj, options);
 
   // if it was a bson objectid return early
-  if (options.checkObjectId && objectId(obj)) return obj.toString();
+  if (
+    options.checkObjectId &&
+    typeof obj.toString === 'function' &&
+    ObjectId.isValid(obj)
+  )
+    return obj.toString();
 
   // check if it was a stream
   if (options.maskStreams && isStream(obj)) return { type: 'Stream' };
@@ -203,6 +217,9 @@ function maskProps(obj, props, options) {
 // inspired by raven's parseRequest
 // eslint-disable-next-line complexity
 const parseRequest = (config = {}) => {
+  const start = hrtime();
+  const id = new ObjectId();
+
   config = {
     req: {},
     userFields: ['id', 'email', 'full_name', 'ip_address'],
@@ -363,6 +380,71 @@ const parseRequest = (config = {}) => {
     user
   };
 
+  if (!isString(result.id)) {
+    result.id = id.toString();
+    if (!isString(result.timestamp))
+      result.timestamp = id.getTimestamp().toISOString();
+  }
+
+  //
+  // NOTE: regarding the naming convention of `timestamp`, it seems to be the
+  // most widely used and supported property name across logging services
+  //
+  // Also note that there is no standard for setting a request received time.
+  //
+  // Examples:
+  //
+  // 1) koa-req-logger uses `ctx.start`
+  // <https://github.com/DrBarnabus/koa-req-logger/blob/master/src/index.ts#L198>
+  //
+  // 2) morgan uses `req._startAt` and `req._startTime` which are not
+  // req._startAt = process.hrtime()
+  // req._startTime = new Date()
+  // <https://github.com/expressjs/morgan/blob/master/index.js#L500-L508>
+  //
+  // 3) pino uses `Symbol('startTime')` but it does not expose it easily
+  // <https://github.com/pinojs/pino-http/issues/65>
+  //
+  // 4) response-time does not expose anything
+  // <https://github.com/expressjs/response-time/pull/18>
+  //
+  // Therefore we created `request-received` middleware that is required
+  // to be used in order for `request.timestamp` to be populated with ISO-8601
+  // <https://github.com/cabinjs/request-received>
+  //
+  // We also opened the following PR's in an attempt to make this a drop-in:
+  //
+  // * https://github.com/pinojs/pino-http/pull/67
+  // * https://github.com/expressjs/morgan/pull/201
+  // * https://github.com/expressjs/response-time/pull/20
+  // * https://github.com/DataDog/node-connect-datadog/pull/7
+  // * https://github.com/DrBarnabus/koa-req-logger/pull/2
+  //
+
+  // add `request.timestamp`
+  if (req[startTime] instanceof Date)
+    result.request.timestamp = req[startTime].toISOString();
+  else if (typeof req[pinoHttpStartTime] === 'number')
+    result.request.timestamp = new Date(req[pinoHttpStartTime]).toISOString();
+
+  // add `request.duration`
+  if (typeof headers['X-Response-Time'] === 'string')
+    result.request.duration = ms(headers['X-Response-Time']);
+
+  // add request's id if available from `req.id`
+  if (isString(req.id)) result.request.id = req.id;
+
+  // add httpVersion if possible (server-side only)
+  if (typeof req.httpVersion === 'string')
+    result.request.http_version = req.httpVersion;
+  else if (
+    (typeof req.httpVersionMajor === 'number' &&
+      typeof req.httpVersionMinor === 'number') ||
+    (typeof req.httpVersionMajor === 'string' &&
+      typeof req.httpVersionMinor === 'string')
+  )
+    result.request.http_version = `${req.httpVersionMajor}.${req.httpVersionMinor}`;
+
   // parse `req.file` and `req.files` for multer v1.x and v2.x
   if (parseFiles) {
     if (typeof req.file === 'object')
@@ -374,6 +456,8 @@ const parseRequest = (config = {}) => {
         clone(maskSpecialTypes(req.files, maskSpecialTypesOptions))
       );
   }
+
+  result.duration = convertHrtime(hrtime(start)).milliseconds;
 
   return result;
 };

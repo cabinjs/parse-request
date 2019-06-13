@@ -59,31 +59,46 @@ This package exports a function that accepts an Object argument with options:
 * `parseBody` (Boolean) - defaults to `true`, if you set to `false` we will not parse nor clone the request `body` property (this overrides all other parsing settings related)
 * `parseFiles` (Boolean) - defaults to `true`, if you set to `false` we will not parse nor clone the request `file` nor `files` properties (this overrides all other parsing settings related)
 
-It automatically detects whether the request is from the Browser, Koa, or Express, and return a parsed object with these fields populated:
+It automatically detects whether the request is from the Browser, Koa, or Express, and return a parsed object with populated properties.
+
+Here's an example object parsed that shows the most extensive object returned:
+
+// TODO:
 
 ```js
 {
   request: {
-    method: 'GET',
-    query: {},
-    headers: {},
-    cookies: {},
-    body: '',
-    url: ''
+    method: ,
+    query: <Object>,
+    headers: <Object>,
+    cookies: <Object>,
+    body: <String>,
+    url: <String>,
+    file: <Object>,
+    files: <Array>,
+    id: <String>
+    http_version: '1.1',
+    date_received: '', // <-- date the server received the request
+    date_created: '' // <-- date the log was parsed/created
   },
-  user: {}
+  user: {},
 }
 ```
 
-Two additional (conditionally) added properties will appear if you are using [multer][] or utilizing `req.file` or `req.files` in your application.  The two properties are `file` and `files` respectively, and are only added if they exist on the original request object.
+A few extra details about the above properties:
 
-Note that there is a `user` object returned, which will be parsed from `req.user` automatically for you.
+* `id` is a newly created BSON ObjectId used to uniquely identify this log
+* `timestamp` is the [ISO-8601][] date time string parsed from the `id` (thanks to MongoDB BSON `ObjectID.getTimestamp` method)
+* `duration` is the number of milliseconds that `parseRequest` took to parse the request object (this is incredibly useful for alerting) – note that this uses `process.hrtime` which this package polyfills thanks to [browser-process-hrtime][]
+* `user` is parsed from the user object on `req.user` automatically (e.g. you are using [passport][])
+* `user` object will have an `ip_address` property added
+* `request.id` is conditionally added if `req.id` is a String – we highly recommend that you use [express-request-id][] in your project, which will automatically add this property if `X-Request-Id` if it is set, otherwise it will generate it as a new UUID
+* `request.file` and `request.files` are conditionally added if you have a `req.file` or `req.files` property (e.g. you are using [multer][])
+* `request.http_version` is parsed from `req.httpVersion` or `req.httpVersionMajor` and `req.httpVersionMinor`
+* `request.timestamp` is the [ISO-8601][] date time string parsed from `req[startTime]` – note that you **must be using the [request-received][] package for this property to be automatically added**
+* `request.duration` is the number of milliseconds that it took to send a response, and it is parsed from `X-Response-Time` header from `request.headers` - note that you must have `X-Response-Time` header (e.g. via [response-time][]) for this property to be automatically added
 
-The `user` object will also have a `ip_address` property added, but only if one does not already exists and if an IP address was actually detected.
-
-Also note that this function will mask passwords and commonly used sensitive field names, so a `req.body.password` or a `req.user.password` property with a value of `foobar123` will become `*********`.
-
-See [Sensitive Field Names Automatically Masked](#sensitive-field-names-automatically-masked) below for the complete list.
+Please see [Credit Card Masking](#credit-card-masking) and [Sensitive Field Names Automatically Masked](#sensitive-field-names-automatically-masked) below for more information about how `request.body`, `request.file`, and `request.files` are parsed and conditionally masked for security.
 
 ### Credit Card Masking
 
@@ -97,7 +112,9 @@ See [sensitive-fields][] for the complete list.
 
 ### Sensitive Header Names Automatically Masked
 
-* `Authorization`
+The `Authorization` HTTP header has its `<credentials>` portion automatically masked.
+
+This means that if you are using BasicAuth or JSON Web Tokens ("JWT"), then your tokens will be hidden.
 
 
 ## Usage
@@ -111,7 +128,7 @@ We highly recommend to simply use [Cabin][] as this package is built-in!
 The example below uses [xhook][] which is used to intercept HTTP requests made in the browser.
 
 ```html
-<script src="https://polyfill.io/v3/polyfill.min.js?features=es6,Number.isFinite,Object.getOwnPropertySymbols,Symbol.iterator,Symbol.prototype"></script>
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6,Number.isFinite,Object.getOwnPropertySymbols,Symbol.iterator,Symbol.prototype,Symbol.for"></script>
 <script src="https://unpkg.com/xhook"></script>
 <script src="https://unpkg.com/parse-request"></script>
 <script type="text/javascript">
@@ -130,13 +147,14 @@ The example below uses [xhook][] which is used to intercept HTTP requests made i
 We recommend using <https://polyfill.io> (specifically with the bundle mentioned in [VanillaJS](#vanillajs) above):
 
 ```html
-<script src="https://polyfill.io/v3/polyfill.min.js?features=es6,Number.isFinite,Object.getOwnPropertySymbols,Symbol.iterator,Symbol.prototype"></script>
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6,Number.isFinite,Object.getOwnPropertySymbols,Symbol.iterator,Symbol.prototype,Symbol.for"></script>
 ```
 
 * Number.isFinite() is not supported in IE 10
 * Object.getOwnPropertySymbols() is not supported in IE 10
 * Symbol.iterator() is not supported in IE 10
 * Symbol.prototype() is not supported in IE 10
+* Symbol.for() is not supported in IE 10
 
 ### Koa
 
@@ -204,3 +222,13 @@ app.get('/', (req, res, next) => {
 [multer]: https://github.com/expressjs/multer
 
 [rfdc]: https://github.com/davidmarkclements/rfdc
+
+[request-received]: https://github.com/cabinjs/request-received
+
+[express-request-id]: https://github.com/floatdrop/express-request-id
+
+[browser-process-hrtime]: https://github.com/kumavis/browser-process-hrtime/
+
+[iso-8601]: https://en.wikipedia.org/wiki/ISO_8601
+
+[response-time]: https://github.com/expressjs/response-time

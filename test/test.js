@@ -4,6 +4,10 @@ const test = require('ava');
 const ObjectId = require('bson-objectid');
 const parseRequest = require('..');
 
+// https://github.com/cabinjs/request-received
+const startTime = Symbol.for('request-received.startTime');
+const pinoHttpStartTime = Symbol.for('pino-http.startTime');
+
 test('hides passwords', t => {
   const obj = parseRequest({
     req: {
@@ -43,6 +47,64 @@ test('hides passwords', t => {
   t.is(body.some.deeply.password, '****');
   t.is(body.some.baz.password.password, '****');
   t.is(body.arr[0].foo.beep[0].password, '***');
+});
+
+test('parses http-version', t => {
+  const obj = parseRequest({
+    req: {
+      httpVersion: '2.0'
+    }
+  });
+  t.is(obj.request.http_version, '2.0');
+});
+
+test('parses http-version major and minor', t => {
+  const obj = parseRequest({
+    req: {
+      httpVersionMajor: '1',
+      httpVersionMinor: '1'
+    }
+  });
+  t.is(obj.request.http_version, '1.1');
+});
+
+test('parses req.id', t => {
+  const obj = parseRequest({
+    req: {
+      id: 'foobar'
+    }
+  });
+  t.is(obj.request.id, 'foobar');
+});
+
+test('created an object id', t => {
+  const obj = parseRequest();
+  t.true(typeof obj.id === 'string');
+  t.true(ObjectId.isValid(obj.id));
+});
+
+test('parses start time and start date', t => {
+  const req = {};
+  req[startTime] = new Date();
+  req.headers = {
+    'X-Response-Time': '500 ms'
+  };
+  const obj = parseRequest({ req });
+  t.true(typeof obj.duration === 'number');
+  t.true(typeof obj.request.timestamp === 'string');
+  t.true(typeof obj.request.duration === 'number');
+});
+
+test('parses pino start time and start date', t => {
+  const req = {};
+  req[pinoHttpStartTime] = Date.now();
+  req.headers = {
+    'X-Response-Time': '500 ms'
+  };
+  const obj = parseRequest({ req });
+  t.true(typeof obj.duration === 'number');
+  t.true(typeof obj.request.timestamp === 'string');
+  t.true(typeof obj.request.duration === 'number');
 });
 
 test('hides authentication header', t => {
