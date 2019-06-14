@@ -154,7 +154,14 @@ function isCreditCard(val) {
 }
 
 function maskString(key, val, props, options) {
-  if (!options.isHeaders) {
+  if (options.isHeaders) {
+    key = key.toLowerCase();
+    props = props.map(prop => prop.toLowerCase());
+    if (props.indexOf('referer') !== -1 || props.indexOf('referrer') !== -1) {
+      props.push('referer');
+      props.push('referrer');
+    }
+  } else {
     // check if it closely resembles a primary ID and return early if so
     if (options.checkId) {
       // _id
@@ -187,7 +194,7 @@ function maskString(key, val, props, options) {
   if (props.indexOf(key) === -1) return val;
   // replace only the authentication <credentials> portion with asterisk
   // Authorization: <type> <credentials>
-  if (options.isHeaders && key === 'Authorization')
+  if (options.isHeaders && key === 'authorization')
     return `${val.split(' ')[0]} ${val
       .substring(val.indexOf(' ') + 1)
       .replace(/./g, '*')}`;
@@ -224,7 +231,7 @@ const parseRequest = (config = {}) => {
     req: {},
     userFields: ['id', 'email', 'full_name', 'ip_address'],
     sanitizeFields: sensitiveFields,
-    sanitizeHeaders: ['Authorization'],
+    sanitizeHeaders: ['authorization'],
     maskCreditCards: true,
     maskBuffers: true,
     maskStreams: true,
@@ -347,7 +354,7 @@ const parseRequest = (config = {}) => {
       isString(window.navigator.userAgent) &&
       (!isString(headers['user-agent']) || !headers['user-agent'])
     )
-      headers['user-agent'] = window.navigator.userAgent;
+      headers['user-ugent'] = window.navigator.userAgent;
     if (typeof window.document !== 'undefined' && isObject(window.document)) {
       // set referrer
       if (
@@ -455,7 +462,7 @@ const parseRequest = (config = {}) => {
       result.request.file = safeStringify(
         clone(maskSpecialTypes(req.file, maskSpecialTypesOptions))
       );
-    if (Array.isArray(req.files))
+    if (typeof req.files === 'object')
       result.request.files = safeStringify(
         clone(maskSpecialTypes(req.files, maskSpecialTypesOptions))
       );

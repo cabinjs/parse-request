@@ -7,7 +7,8 @@
     "failFast": true,
     "verbose": true,
     "helpers": [
-      "test/helpers/**/*"
+      "test/helpers/**/*",
+      "test/fixtures/**/*"
     ]
   },
   "bugs": {
@@ -48,20 +49,27 @@
     "ava": "^2.1.0",
     "babelify": "^10.0.0",
     "browserify": "^16.2.3",
+    "cabin": "^2.1.2",
     "codecov": "^3.5.0",
     "cross-env": "^5.2.0",
     "eslint": "^5.16.0",
     "eslint-config-xo-lass": "^1.0.3",
     "eslint-plugin-compat": "^3.1.1",
     "eslint-plugin-node": "^9.1.0",
+    "express": "^4.17.1",
+    "express-request-id": "^1.4.1",
     "fixpack": "^2.3.1",
-    "husky": "^2.4.0",
-    "lint-staged": "^8.2.0",
+    "husky": "^2.4.1",
+    "lint-staged": "^8.2.1",
+    "multer": "^1.4.1",
     "nyc": "^14.1.1",
     "prettier": "^1.18.2",
     "remark-cli": "^6.0.1",
     "remark-preset-github": "^0.0.13",
+    "request-received": "^0.0.2",
+    "response-time": "^2.3.2",
     "rimraf": "^2.6.3",
+    "supertest": "^4.0.2",
     "tinyify": "^2.5.1",
     "xo": "^0.24.0"
   },

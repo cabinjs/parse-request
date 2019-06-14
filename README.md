@@ -47,7 +47,7 @@ This package exports a function that accepts an Object argument with options:
 * `req` (Object) - an HTTP request
 * `userFields` (Array) - defaults to `[ 'id', 'email', 'full_name', 'ip_address' ]`, list of fields to cherry-pick from the user object parsed out of `req.user`
 * `sanitizeFields` (Array) - defaults to the list of Strings provided under [Sensitive Field Names Automatically Masked](#sensitive-field-names-automatically-masked) below
-* `sanitizeHeaders` (Array) - defaults to the list of Strings provided under [Sensitive Header Names Automatically Masked](#sensitive-header-names-automatically-masked) below
+* `sanitizeHeaders` (Array) - defaults to the list of Strings provided under [Sensitive Header Names Automatically Masked](#sensitive-header-names-automatically-masked) below (case insensitive)
 * `maskCreditCards` (Boolean) - defaults to `true`, and specifies whether or not credit card numbers are masked
 * `maskBuffers` (Boolean) - defaults to `true`, and will rewrite `Buffer`'s, `ArrayBuffer`'s, and `SharedArrayBuffer`'s recursively as an object of `{ type: <String>, byteLength: <Number> }`.  Note that this will save you on disk log storage size as logs will not output verbose stringified buffers – e.g. imagine a 10MB file image upload sent across the request body as a Buffer!)
 * `maskStreams` (Boolean) - defauls to `true`, and will rewrite `Stream`'s to `{ type: 'Stream' }` (this is useful for those using multer v2.x (streams version), or those that have streams in `req.body`, `req.file`, or `req.files`)
@@ -61,27 +61,44 @@ This package exports a function that accepts an Object argument with options:
 
 It automatically detects whether the request is from the Browser, Koa, or Express, and return a parsed object with populated properties.
 
-Here's an example object parsed that shows the most extensive object returned:
-
-// TODO:
+Here's an example object parsed:
 
 ```js
 {
   request: {
-    method: ,
-    query: <Object>,
-    headers: <Object>,
-    cookies: <Object>,
-    body: <String>,
-    url: <String>,
-    file: <Object>,
-    files: <Array>,
-    id: <String>
+    method: 'POST',
+    query: {
+      foo: 'bar',
+      beep: 'boop'
+    },
+    headers: {
+      host: '127.0.0.1:63955',
+      'accept-encoding': 'gzip, deflate',
+      'user-agent': 'node-superagent/3.8.3',
+      authorization: 'Basic ********************',
+      accept: 'application/json',
+      cookie: 'foo=bar;beep=boop',
+      'content-type': 'multipart/form-data; boundary=--------------------------930511303948232291410214',
+      'content-length': '1599',
+      connection: 'close'
+    },
+    cookies: {
+      foo: 'bar',
+      beep: 'boop'
+    },
+    body: '{"product_id":"5d0350ef2ca74d11ee6e4f00","name":"nifty","surname":"lettuce","bank_account_number":"1234567890","card":{"number":"****-****-****-****"},"stripe_token":"***************","favorite_color":"green"}',
+    url: '/?foo=bar&beep=boop',
+    timestamp: '2019-06-14T07:46:55.568Z',
+    id: 'fd6225ed-8db0-4862-8566-0c0ad6f4c7c9',
     http_version: '1.1',
-    date_received: '', // <-- date the server received the request
-    date_created: '' // <-- date the log was parsed/created
+    files: '{"avatar":[{"fieldname":"avatar","originalname":"avatar.png","encoding":"7bit","mimetype":"image/png","buffer":{"type":"Buffer","byteLength":216},"size":216}],"boop":[{"fieldname":"boop","originalname":"boop-1.txt","encoding":"7bit","mimetype":"text/plain","buffer":{"type":"Buffer","byteLength":7},"size":7},{"fieldname":"boop","originalname":"boop-2.txt","encoding":"7bit","mimetype":"text/plain","buffer":{"type":"Buffer","byteLength":7},"size":7}]}'
   },
-  user: {},
+  user: {
+    ip_address: '::ffff:127.0.0.1'
+  },
+  id: '5d0350ef2ca74d11ee6e4f01',
+  timestamp: '2019-06-14T07:46:55.000Z',
+  duration: 6.651317
 }
 ```
 
@@ -197,7 +214,7 @@ app.get('/', (req, res, next) => {
 [MIT](LICENSE) © [Nick Baugh](http://niftylettuce.com/)
 
 
-## 
+##
 
 [npm]: https://www.npmjs.com/
 

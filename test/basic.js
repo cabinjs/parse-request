@@ -136,21 +136,21 @@ test('hides authentication header', t => {
     req: {
       method: 'GET',
       headers: {
-        Authorization: 'Bearer foobar'
+        authorization: 'Bearer foobar'
       }
     }
   });
-  t.is(obj.request.headers.Authorization, 'Bearer ******');
+  t.is(obj.request.headers.authorization, 'Bearer ******');
 
   obj = parseRequest({
     req: {
       method: 'GET',
       headers: {
-        Authorization: 'Bearer foobar foobar foobar'
+        authorization: 'Bearer foobar foobar foobar'
       }
     }
   });
-  t.is(obj.request.headers.Authorization, 'Bearer ********************');
+  t.is(obj.request.headers.authorization, 'Bearer ********************');
 });
 
 test('works with multer req.file and req.files', t => {
