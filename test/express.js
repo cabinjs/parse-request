@@ -47,6 +47,7 @@ test.cb('express', t => {
       t.true(typeof result.id === 'string');
       t.true(typeof result.timestamp === 'string');
       t.true(typeof result.duration === 'number');
+      req.logger.info('visited home page');
       res.send('ok');
     }
   );

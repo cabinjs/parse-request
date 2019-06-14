@@ -354,7 +354,7 @@ const parseRequest = (config = {}) => {
       isString(window.navigator.userAgent) &&
       (!isString(headers['user-agent']) || !headers['user-agent'])
     )
-      headers['user-ugent'] = window.navigator.userAgent;
+      headers['user-agent'] = window.navigator.userAgent;
     if (typeof window.document !== 'undefined' && isObject(window.document)) {
       // set referrer
       if (
