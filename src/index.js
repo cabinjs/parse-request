@@ -437,6 +437,8 @@ const parseRequest = (config = {}) => {
     result.request.timestamp = new Date(req[pinoHttpStartTime]).toISOString();
   else if (req._startTime instanceof Date)
     result.request.timestamp = req._startTime.toISOString();
+  else if (typeof req._startTime === 'number')
+    result.request.timestamp = new Date(req._startTime).toISOString();
 
   // add `request.duration`
   if (typeof headers['X-Response-Time'] === 'string')

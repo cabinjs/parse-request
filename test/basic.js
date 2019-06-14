@@ -95,9 +95,21 @@ test('parses start time and start date as date', t => {
   t.true(typeof obj.request.duration === 'number');
 });
 
-test('works with morgan req._startTime', t => {
+test('works with morgan req._startTime date', t => {
   const req = {};
   req._startTime = new Date();
+  req.headers = {
+    'X-Response-Time': '500 ms'
+  };
+  const obj = parseRequest({ req });
+  t.true(typeof obj.duration === 'number');
+  t.true(typeof obj.request.timestamp === 'string');
+  t.true(typeof obj.request.duration === 'number');
+});
+
+test('works with morgan req._startTime number', t => {
+  const req = {};
+  req._startTime = Date.now();
   req.headers = {
     'X-Response-Time': '500 ms'
   };
