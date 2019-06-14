@@ -83,9 +83,33 @@ test('created an object id', t => {
   t.true(ObjectId.isValid(obj.id));
 });
 
-test('parses start time and start date', t => {
+test('parses start time and start date as date', t => {
   const req = {};
   req[startTime] = new Date();
+  req.headers = {
+    'X-Response-Time': '500 ms'
+  };
+  const obj = parseRequest({ req });
+  t.true(typeof obj.duration === 'number');
+  t.true(typeof obj.request.timestamp === 'string');
+  t.true(typeof obj.request.duration === 'number');
+});
+
+test('works with morgan req._startTime', t => {
+  const req = {};
+  req._startTime = new Date();
+  req.headers = {
+    'X-Response-Time': '500 ms'
+  };
+  const obj = parseRequest({ req });
+  t.true(typeof obj.duration === 'number');
+  t.true(typeof obj.request.timestamp === 'string');
+  t.true(typeof obj.request.duration === 'number');
+});
+
+test('parses start time and start date as number', t => {
+  const req = {};
+  req[startTime] = Date.now();
   req.headers = {
     'X-Response-Time': '500 ms'
   };
