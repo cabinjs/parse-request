@@ -44,12 +44,9 @@
     "@babel/cli": "^7.4.4",
     "@babel/core": "^7.4.5",
     "@babel/preset-env": "^7.4.5",
-    "@babel/register": "^7.4.4",
     "@commitlint/cli": "^8.0.0",
     "@commitlint/config-conventional": "^8.0.0",
-    "@istanbuljs/nyc-config-babel": "^2.1.1",
     "ava": "^2.1.0",
-    "babel-plugin-istanbul": "^5.1.4",
     "babelify": "^10.0.0",
     "browserify": "^16.2.3",
     "cabin": "^3.0.3",
@@ -139,14 +136,6 @@
     }
   },
   "main": "lib/index.js",
-  "nyc": {
-    "extends": "@istanbuljs/nyc-config-babel",
-    "reporter": [
-      "lcov",
-      "html",
-      "text"
-    ]
-  },
   "prettier": {
     "singleQuote": true,
     "bracketSpacing": true,
