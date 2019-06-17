@@ -47,12 +47,7 @@ function maskSpecialTypes(obj, options) {
   if (Array.isArray(obj)) return maskArray(obj, options);
 
   // if it was a bson objectid return early
-  if (
-    options.checkObjectId &&
-    typeof obj.toString === 'function' &&
-    ObjectId.isValid(obj)
-  )
-    return obj.toString();
+  if (options.checkObjectId && ObjectId.isValid(obj)) return obj.toString();
 
   // check if it was a stream
   if (options.maskStreams && isStream(obj)) return { type: 'Stream' };
@@ -153,17 +148,33 @@ function isCreditCard(val) {
   return match;
 }
 
+function isID(val, options) {
+  // if it was an objectid return early
+  if (options.checkObjectId && ObjectId.isValid(val)) return true;
+
+  // if it was a cuid return early
+  // <https://github.com/ericelliott/cuid/issues/88#issuecomment-339848922>
+  if (options.checkCuid && val.indexOf('c') === 0 && val.length >= 7)
+    return true;
+
+  // if it was a uuid v1-5 return early
+  if (options.checkUUID && isUUID.anyNonNil(val)) return true;
+
+  return false;
+}
+
 function maskString(key, val, props, options) {
+  const isKeyString = isString(key);
   if (options.isHeaders) {
-    key = key.toLowerCase();
+    // headers are case-insensitive
     props = props.map(prop => prop.toLowerCase());
     if (props.indexOf('referer') !== -1 || props.indexOf('referrer') !== -1) {
-      props.push('referer');
-      props.push('referrer');
+      if (props.indexOf('referer') === -1) props.push('referer');
+      if (props.indexOf('referrer') === -1) props.push('referrer');
     }
   } else {
     // check if it closely resembles a primary ID and return early if so
-    if (options.checkId) {
+    if (isKeyString && options.checkId) {
       // _id
       // id
       // ID
@@ -178,18 +189,15 @@ function maskString(key, val, props, options) {
       if (regexId.test(snakeCase)) return val;
     }
 
-    // if it was a cuid return early
-    // <https://github.com/ericelliott/cuid/issues/88#issuecomment-339848922>
-    if (options.checkCuid && val.indexOf('c') === 0 && val.length >= 7)
-      return val;
-
-    // if it was a uuid v1-5 return early
-    if (options.checkUUID && isUUID.anyNonNil(val)) return val;
+    // if it was an objectid, cuid, or uuid return early
+    if (isID(val, options)) return val;
 
     // if it was a credit card then replace all digits with asterisk
     if (options.maskCreditCards && isCreditCard(val))
       return val.replace(/[^\D\s]/g, '*');
   }
+
+  if (!isKeyString) return val;
 
   if (props.indexOf(key) === -1) return val;
   // replace only the authentication <credentials> portion with asterisk
@@ -201,15 +209,30 @@ function maskString(key, val, props, options) {
   return val.replace(/./g, '*');
 }
 
+function headersToLowerCase(headers) {
+  if (typeof headers !== 'object' || Array.isArray(headers)) return headers;
+  const lowerCasedHeaders = {};
+  for (const header in headers) {
+    if (isString(headers[header]))
+      lowerCasedHeaders[header.toLowerCase()] = headers[header];
+  }
+
+  return lowerCasedHeaders;
+}
+
 function maskProps(obj, props, options) {
   options = {
     maskCreditCards: true,
     isHeaders: false,
     checkId: true,
     checkCuid: true,
+    checkObjectId: true,
     checkUUID: true,
     ...options
   };
+
+  if (isString(obj)) return maskString(null, obj, props, options);
+
   // for...in is much faster than Object.entries or any alternative
   for (const key in obj) {
     if (typeof obj[key] === 'object')
@@ -223,7 +246,7 @@ function maskProps(obj, props, options) {
 
 // inspired by raven's parseRequest
 // eslint-disable-next-line complexity
-const parseRequest = (config = {}) => {
+const parseRequest = (config = {}, win) => {
   const start = hrtime();
   const id = new ObjectId();
 
@@ -249,6 +272,9 @@ const parseRequest = (config = {}) => {
     ...config
   };
 
+  // <https://github.com/lukechilds/window#universal-testing-pattern>
+  win = win || (typeof window === 'undefined' ? undefined : window);
+
   const clone = rfdc(config.rfdc);
 
   const {
@@ -271,6 +297,7 @@ const parseRequest = (config = {}) => {
     maskCreditCards,
     checkId,
     checkCuid,
+    checkObjectId,
     checkUUID
   };
 
@@ -280,18 +307,21 @@ const parseRequest = (config = {}) => {
     checkObjectId
   };
 
-  const headers = maskProps(req.headers || req.header || {}, sanitizeHeaders, {
-    isHeaders: true
-  });
+  const headers = maskProps(
+    headersToLowerCase(req.headers || req.header || {}),
+    sanitizeHeaders,
+    {
+      isHeaders: true
+    }
+  );
   const method = req.method || 'GET';
 
   // inspired from `preserve-qs` package
   let originalUrl = '';
   if (isString(req.originalUrl)) ({ originalUrl } = req);
   else if (isString(req.url)) originalUrl = req.url;
-  else if (process.browser)
-    originalUrl = window.location.pathname + window.location.search;
-  originalUrl = new Url(originalUrl);
+  else if (win) originalUrl = win.location.pathname + win.location.search;
+  originalUrl = new Url(originalUrl, {});
 
   // parse query, path, and origin to prepare absolute Url
   const query = Url.qs.parse(originalUrl.query);
@@ -335,40 +365,34 @@ const parseRequest = (config = {}) => {
       );
 
     // recursively search through body and filter out passwords from it
-    if (isObject(body))
-      body = maskProps(body, sanitizeFields, maskPropsOptions);
+    body = maskProps(body, sanitizeFields, maskPropsOptions);
 
     if (!isUndefined(body) && !isNull(body) && !isString(body))
       body = safeStringify(body);
-  } else {
-    body = originalBody;
   }
 
   // populate user agent and referrer if
   // we're in a browser and they're unset
-  if (process.browser) {
+  if (win) {
     // set user agent
     if (
-      typeof window.navigator !== 'undefined' &&
-      isObject(window.navigator) &&
-      isString(window.navigator.userAgent) &&
-      (!isString(headers['user-agent']) || !headers['user-agent'])
+      typeof win.navigator !== 'undefined' &&
+      isObject(win.navigator) &&
+      isString(win.navigator.userAgent) &&
+      !isString(headers['user-agent'])
     )
-      headers['user-agent'] = window.navigator.userAgent;
-    if (typeof window.document !== 'undefined' && isObject(window.document)) {
+      headers['user-agent'] = win.navigator.userAgent;
+    if (typeof win.document !== 'undefined' && isObject(win.document)) {
       // set referrer
       if (
-        isString(window.document.referrer) &&
-        ((!isString(headers.referer) || !headers.referer) &&
-          (!isString(headers.referrer) || !headers.referrer))
+        isString(win.document.referrer) &&
+        !isString(headers.referer) &&
+        !isString(headers.referrer)
       )
-        headers.referer = window.document.referrer;
+        headers.referer = win.document.referrer;
       // set cookie
-      if (
-        isString(window.document.cookie) &&
-        (!isString(headers.cookie) || !headers.cookie)
-      )
-        headers.cookie = window.document.cookie;
+      if (isString(win.document.cookie) && !isString(headers.cookie))
+        headers.cookie = win.document.cookie;
     }
   }
 
@@ -376,22 +400,19 @@ const parseRequest = (config = {}) => {
   const cookies = cookie.parse(headers.cookie || '');
 
   const result = {
+    id: id.toString(),
+    timestamp: id.getTimestamp().toISOString(),
     request: {
       method,
       query,
       headers,
       cookies,
-      body,
       url: absoluteUrl
     },
     user
   };
 
-  if (!isString(result.id)) {
-    result.id = id.toString();
-    if (!isString(result.timestamp))
-      result.timestamp = id.getTimestamp().toISOString();
-  }
+  if (parseBody) result.request.body = body;
 
   //
   // NOTE: regarding the naming convention of `timestamp`, it seems to be the
@@ -441,20 +462,18 @@ const parseRequest = (config = {}) => {
     result.request.timestamp = new Date(req._startTime).toISOString();
 
   // add `request.duration`
-  if (typeof headers['X-Response-Time'] === 'string')
-    result.request.duration = ms(headers['X-Response-Time']);
+  if (isString(headers['x-response-time']))
+    result.request.duration = ms(headers['x-response-time']);
 
   // add request's id if available from `req.id`
   if (isString(req.id)) result.request.id = req.id;
 
   // add httpVersion if possible (server-side only)
-  if (typeof req.httpVersion === 'string')
-    result.request.http_version = req.httpVersion;
+  if (isString(req.httpVersion)) result.request.http_version = req.httpVersion;
   else if (
     (typeof req.httpVersionMajor === 'number' &&
       typeof req.httpVersionMinor === 'number') ||
-    (typeof req.httpVersionMajor === 'string' &&
-      typeof req.httpVersionMinor === 'string')
+    (isString(req.httpVersionMajor) && isString(req.httpVersionMinor))
   )
     result.request.http_version = `${req.httpVersionMajor}.${req.httpVersionMinor}`;
 

@@ -7,5 +7,5 @@
       }
     }]
   ],
-  "sourceMaps": "inline"
+  "plugins": [ "istanbul" ]
 }

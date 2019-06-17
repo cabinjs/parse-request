@@ -143,6 +143,95 @@ test('parses pino start time and start date', t => {
   t.true(typeof obj.request.duration === 'number');
 });
 
+test('uses req.url', t => {
+  const obj = parseRequest({
+    req: {
+      method: 'POST',
+      body: {
+        foo: new PassThrough()
+      }
+    }
+  });
+  const body = JSON.parse(obj.request.body);
+  t.deepEqual(body.foo, { type: 'Stream' });
+});
+
+test('uses req.connection.remoteAddress', t => {
+  const obj = parseRequest({
+    req: {
+      method: 'GET',
+      connection: {
+        remoteAddress: '1.2.3.4'
+      }
+    }
+  });
+  t.is(obj.user.ip_address, '1.2.3.4');
+});
+
+test('masks referrer if referer is set', t => {
+  const obj = parseRequest({
+    req: {
+      method: 'GET',
+      headers: {
+        referrer: 'foo'
+      }
+    },
+    sanitizeHeaders: ['referer']
+  });
+  t.is(obj.request.headers.referrer, '***');
+});
+
+test('masks referer if referrer is set', t => {
+  const obj = parseRequest({
+    req: {
+      method: 'GET',
+      headers: {
+        referer: 'foo'
+      }
+    },
+    sanitizeHeaders: ['referrer']
+  });
+  t.is(obj.request.headers.referer, '***');
+});
+
+test('does not parse body', t => {
+  const body = 'test';
+  const obj = parseRequest({
+    req: {
+      method: 'POST',
+      body
+    },
+    parseBody: false
+  });
+  t.true(typeof obj.request.body === 'undefined');
+});
+
+test('does not parse files', t => {
+  const obj = parseRequest({
+    req: {
+      method: 'POST',
+      file: {
+        fieldname: 'test',
+        originalname: 'test',
+        buffer: Buffer.from('abc')
+      },
+      files: [
+        {
+          fieldname: 'test',
+          stream: new PassThrough()
+        },
+        {
+          fieldname: 'test',
+          buffer: Buffer.from('xyz')
+        }
+      ]
+    },
+    parseFiles: false
+  });
+  t.true(typeof obj.request.file === 'undefined');
+  t.true(typeof obj.request.files === 'undefined');
+});
+
 test('hides authentication header', t => {
   let obj = parseRequest({
     req: {
@@ -223,7 +312,12 @@ test('does not clone buffers', t => {
           some: 'thing',
           nested: [{ foo: 'bar' }, Buffer.from('beep')]
         },
-        foo: [[new ArrayBuffer(6), [new ArrayBuffer(10)]]]
+        foo: [[new ArrayBuffer(6), [new ArrayBuffer(10)]]],
+        boop: {
+          baz: new ArrayBuffer(3),
+          ox: [new ArrayBuffer(1), { deer: new ArrayBuffer(1) }]
+        },
+        duck: new ArrayBuffer(2)
       }
     }
   });
@@ -240,7 +334,20 @@ test('does not clone buffers', t => {
         { type: 'ArrayBuffer', byteLength: 6 },
         [{ type: 'ArrayBuffer', byteLength: 10 }]
       ]
-    ]
+    ],
+    boop: {
+      baz: { type: 'ArrayBuffer', byteLength: 3 },
+      ox: [
+        { type: 'ArrayBuffer', byteLength: 1 },
+        {
+          deer: {
+            type: 'ArrayBuffer',
+            byteLength: 1
+          }
+        }
+      ]
+    },
+    duck: { type: 'ArrayBuffer', byteLength: 2 }
   });
 });
 
@@ -274,7 +381,53 @@ test('does not mask cuid', t => {
   });
 });
 
-test('does not mask MongoDB ObjectID', t => {
+test('masks a string passed as body', t => {
+  const obj = parseRequest({
+    req: {
+      method: 'POST',
+      body: '4242-4242-4242-4242'
+    }
+  });
+  t.is(obj.request.body, '****-****-****-****');
+});
+
+test('masks an array passed as body', t => {
+  const obj = parseRequest({
+    req: {
+      method: 'POST',
+      body: [
+        {
+          'card[number]': '0000000000000000'
+        },
+        [
+          [
+            {
+              'card[number]': '0000000000000000'
+            }
+          ]
+        ]
+      ]
+    }
+  });
+  const body = JSON.parse(obj.request.body);
+  t.is(body[0]['card[number]'], '****************');
+  t.is(body[1][0][0]['card[number]'], '****************');
+});
+
+test('does not mask specific objectid', t => {
+  const obj = parseRequest({
+    req: {
+      method: 'POST',
+      body: {
+        product: '5abbbacf04e4872d3ae344c1'
+      }
+    }
+  });
+  const body = JSON.parse(obj.request.body);
+  t.is(body.product, '5abbbacf04e4872d3ae344c1');
+});
+
+test('does not mask MongoDB ObjectId', t => {
   const obj = parseRequest({
     req: {
       method: 'POST',
