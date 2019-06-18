@@ -25,12 +25,6 @@ const hashMapIds = {
 
 const regexId = /_id$/;
 
-function isValidObjectId(val) {
-  if (!isString(val) && (!isObject(val) || typeof val.toString !== 'function'))
-    return false;
-  return ObjectId.isValid(val);
-}
-
 function maskArray(obj, options) {
   const arr = [];
   for (let i = 0; i < obj.length; i++) {
@@ -53,7 +47,7 @@ function maskSpecialTypes(obj, options) {
   if (Array.isArray(obj)) return maskArray(obj, options);
 
   // if it was a bson objectid return early
-  if (options.checkObjectId && isValidObjectId(obj)) return obj.toString();
+  if (options.checkObjectId && ObjectId.isValid(obj)) return obj.toString();
 
   // check if it was a stream
   if (options.maskStreams && isStream(obj)) return { type: 'Stream' };
@@ -156,7 +150,7 @@ function isCreditCard(val) {
 
 function isID(val, options) {
   // if it was an objectid return early
-  if (options.checkObjectId && isValidObjectId(val)) return true;
+  if (options.checkObjectId && ObjectId.isValid(val)) return true;
 
   // if it was a cuid return early
   // <https://github.com/ericelliott/cuid/issues/88#issuecomment-339848922>
