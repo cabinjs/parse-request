@@ -201,6 +201,10 @@ app.get('/', (req, res, next) => {
 });
 ```
 
+#### If you override req.body and need to preserve original in logs
+
+Sometimes developers overwrite `req.body` or `req.body` properties – therefore if you want to preserve the original request, you can add `req._originalBody = req.body` at the top of your route middleware (or as a global route middleware).
+
 
 ## Contributors
 
