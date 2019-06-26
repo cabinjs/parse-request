@@ -42,78 +42,119 @@ yarn add parse-request
 
 ## How does it work
 
-This package exports a function that accepts an Object argument with options:
+> **This package is used internally by Cabin's middleware, and we highly recommend you to simply use [Cabin][] instead of this package in particular.**
 
-* `req` (Object) - an HTTP request
-* `userFields` (Array) - defaults to `[ 'id', 'email', 'full_name', 'ip_address' ]`, list of fields to cherry-pick from the user object parsed out of `req.user`
-* `sanitizeFields` (Array) - defaults to the list of Strings provided under [Sensitive Field Names Automatically Masked](#sensitive-field-names-automatically-masked) below
-* `sanitizeHeaders` (Array) - defaults to the list of Strings provided under [Sensitive Header Names Automatically Masked](#sensitive-header-names-automatically-masked) below (case insensitive)
-* `maskCreditCards` (Boolean) - defaults to `true`, and specifies whether or not credit card numbers are masked
-* `maskBuffers` (Boolean) - defaults to `true`, and will rewrite `Buffer`'s, `ArrayBuffer`'s, and `SharedArrayBuffer`'s recursively as an object of `{ type: <String>, byteLength: <Number> }`.  Note that this will save you on disk log storage size as logs will not output verbose stringified buffers – e.g. imagine a 10MB file image upload sent across the request body as a Buffer!)
-* `maskStreams` (Boolean) - defauls to `true`, and will rewrite `Stream`'s to `{ type: 'Stream' }` (this is useful for those using multer v2.x (streams version), or those that have streams in `req.body`, `req.file`, or `req.files`)
-* `checkId` (Boolean) - defaults to `true`, and prevents Strings that closely resemble primary key ID's from being masked (e.g. properties named `_id`, `id`, `ID`, `product_id`, `product-id`, `productId`, `productID`, and `product[id]` won't get masked or show as a false-positive for a credit card check)
-* `checkCuid` (Boolean) - defaults to `true`, and prevents [cuid][] values from being masked
-* `checkObjectId` (Boolean) - defaults to `true`, and prevents [MongoDB BSON ObjectId][bson-objectid] from being masked
-* `checkUUID` (Boolean) - defaults to `true`, and prevents [uuid][] values from being masked
-* `rfdc` (Object) - defaults to `{ proto: false, circles: false }` (you should not need to customize this, but if necessary refer to [rfdc][] documentation)
-* `parseBody` (Boolean) - defaults to `true`, if you set to `false` we will not parse nor clone the request `body` property (this overrides all other parsing settings related)
-* `parseFiles` (Boolean) - defaults to `true`, if you set to `false` we will not parse nor clone the request `file` nor `files` properties (this overrides all other parsing settings related)
+This package exports a function that accepts an Object `options` argument:
 
-It automatically detects whether the request is from the Browser, Koa, or Express, and return a parsed object with populated properties.
+* `options` (Object) - a configuration object
+  * `req` (Object) - an HTTP request
+  * `responseHeaders` (String or Object) - we highly recommend that you pass `res._headers` (see [Cabin][]'s middleware logic if you need an example of this)
+  * `userFields` (Array) - defaults to `[ 'id', 'email', 'full_name', 'ip_address' ]`, list of fields to cherry-pick from the user object parsed out of `req.user`
+  * `sanitizeFields` (Array) - defaults to the list of Strings provided under [Sensitive Field Names Automatically Masked](#sensitive-field-names-automatically-masked) below
+  * `sanitizeHeaders` (Array) - defaults to the list of Strings provided under [Sensitive Header Names Automatically Masked](#sensitive-header-names-automatically-masked) below (case insensitive)
+  * `maskCreditCards` (Boolean) - defaults to `true`, and specifies whether or not credit card numbers are masked
+  * `maskBuffers` (Boolean) - defaults to `true`, and will rewrite `Buffer`'s, `ArrayBuffer`'s, and `SharedArrayBuffer`'s recursively as an object of `{ type: <String>, byteLength: <Number> }`.  Note that this will save you on disk log storage size as logs will not output verbose stringified buffers – e.g. imagine a 10MB file image upload sent across the request body as a Buffer!)
+  * `maskStreams` (Boolean) - defauls to `true`, and will rewrite `Stream`'s to `{ type: 'Stream' }` (this is useful for those using multer v2.x (streams version), or those that have streams in `req.body`, `req.file`, or `req.files`)
+  * `checkId` (Boolean) - defaults to `true`, and prevents Strings that closely resemble primary key ID's from being masked (e.g. properties named `_id`, `id`, `ID`, `product_id`, `product-id`, `productId`, `productID`, and `product[id]` won't get masked or show as a false-positive for a credit card check)
+  * `checkCuid` (Boolean) - defaults to `true`, and prevents [cuid][] values from being masked
+  * `checkObjectId` (Boolean) - defaults to `true`, and prevents [MongoDB BSON ObjectId][bson-objectid] from being masked
+  * `checkUUID` (Boolean) - defaults to `true`, and prevents [uuid][] values from being masked
+  * `rfdc` (Object) - defaults to `{ proto: false, circles: false }` (you should not need to customize this, but if necessary refer to [rfdc][] documentation)
+  * `parseBody` (Boolean) - defaults to `true`, if you set to `false` we will not parse nor clone the request `body` property (this overrides all other parsing settings related)
+  * `parseFiles` (Boolean) - defaults to `true`, if you set to `false` we will not parse nor clone the request `file` nor `files` properties (this overrides all other parsing settings related)
+
+It automatically detects whether the request is from the Browser, Koa, or Express, and returns a parsed object with populated properties.
 
 Here's an example object parsed:
 
 ```js
 {
-  request: {
-    method: 'POST',
-    query: {
-      foo: 'bar',
-      beep: 'boop'
+  "id": "5d126d86160cea56950f80a9",
+  "timestamp": "2019-06-25T18:52:54.000Z",
+  "request": {
+    "method": "POST",
+    "query": {
+      "foo": "bar",
+      "beep": "boop"
     },
-    headers: {
-      host: '127.0.0.1:63955',
-      'accept-encoding': 'gzip, deflate',
-      'user-agent': 'node-superagent/3.8.3',
-      authorization: 'Basic ********************',
-      accept: 'application/json',
-      cookie: 'foo=bar;beep=boop',
-      'content-type': 'multipart/form-data; boundary=--------------------------930511303948232291410214',
-      'content-length': '1599',
-      connection: 'close'
+    "headers": {
+      "host": "127.0.0.1:59746",
+      "accept-encoding": "gzip, deflate",
+      "user-agent": "node-superagent/3.8.3",
+      "authorization": "Basic ********************",
+      "accept": "application/json",
+      "cookie": "foo=bar;beep=boop",
+      "content-type": "multipart/form-data; boundary=--------------------------104476455118209968089794",
+      "content-length": "1599",
+      "connection": "close"
     },
-    cookies: {
-      foo: 'bar',
-      beep: 'boop'
+    "cookies": {
+      "foo": "bar",
+      "beep": "boop"
     },
-    body: '{"product_id":"5d0350ef2ca74d11ee6e4f00","name":"nifty","surname":"lettuce","bank_account_number":"1234567890","card":{"number":"****-****-****-****"},"stripe_token":"***************","favorite_color":"green"}',
-    url: '/?foo=bar&beep=boop',
-    timestamp: '2019-06-14T07:46:55.568Z',
-    id: 'fd6225ed-8db0-4862-8566-0c0ad6f4c7c9',
-    http_version: '1.1',
-    files: '{"avatar":[{"fieldname":"avatar","originalname":"avatar.png","encoding":"7bit","mimetype":"image/png","buffer":{"type":"Buffer","byteLength":216},"size":216}],"boop":[{"fieldname":"boop","originalname":"boop-1.txt","encoding":"7bit","mimetype":"text/plain","buffer":{"type":"Buffer","byteLength":7},"size":7},{"fieldname":"boop","originalname":"boop-2.txt","encoding":"7bit","mimetype":"text/plain","buffer":{"type":"Buffer","byteLength":7},"size":7}]}'
+    "url": "/?foo=bar&beep=boop",
+    "body": "{\"product_id\":\"5d0350ef2ca74d11ee6e4f00\",\"name\":\"nifty\",\"surname\":\"lettuce\",\"bank_account_number\":\"1234567890\",\"card\":{\"number\":\"****-****-****-****\"},\"stripe_token\":\"***************\",\"favorite_color\":\"green\"}",
+    "timestamp": "2019-06-25T18:52:54.589Z",
+    "id": "fbbce5d4-02d9-4a81-9a70-909631317e7d",
+    "http_version": "1.1",
+    "files": "{\"avatar\":[{\"fieldname\":\"avatar\",\"originalname\":\"avatar.png\",\"encoding\":\"7bit\",\"mimetype\":\"image/png\",\"buffer\":{\"type\":\"Buffer\",\"byteLength\":216},\"size\":216}],\"boop\":[{\"fieldname\":\"boop\",\"originalname\":\"boop-1.txt\",\"encoding\":\"7bit\",\"mimetype\":\"text/plain\",\"buffer\":{\"type\":\"Buffer\",\"byteLength\":7},\"size\":7},{\"fieldname\":\"boop\",\"originalname\":\"boop-2.txt\",\"encoding\":\"7bit\",\"mimetype\":\"text/plain\",\"buffer\":{\"type\":\"Buffer\",\"byteLength\":7},\"size\":7}]}"
   },
-  user: {
-    ip_address: '::ffff:127.0.0.1'
+  "user": {
+    "ip_address": "::ffff:127.0.0.1"
   },
-  id: '5d0350ef2ca74d11ee6e4f01',
-  timestamp: '2019-06-14T07:46:55.000Z',
-  duration: 6.651317
+  "response": {
+    "headers": {
+      "x-powered-by": "Express",
+      "x-request-id": "fbbce5d4-02d9-4a81-9a70-909631317e7d",
+      "content-security-policy": "default-src 'none'",
+      "x-content-type-options": "nosniff",
+      "content-type": "text/html; charset=utf-8",
+      "content-length": "1213",
+      "x-response-time": "48.658ms",
+      "date": "Tue, 25 Jun 2019 18:52:54 GMT",
+      "connection": "close"
+    },
+    "http_version": "1.1",
+    "status_code": 200,
+    "reason_phrase": "OK",
+    "timestamp": "2019-06-25T18:52:54.000Z",
+    "duration": 48.658
+  },
+  "duration": 1.350323,
+  "app": {
+    "name": "parse-request",
+    "version": "1.0.11",
+    "node": "v10.15.3",
+    "hash": "f99bb8f28be5c6dc76bed76f6dd8984accc5c5fa",
+    "environment": "test",
+    "hostname": "jacks-MacBook-Pro.local",
+    "pid": 22165
+  }
 }
 ```
 
-A few extra details about the above properties:
+A few extra details about the above parsed properties:
 
-* `id` is a newly created BSON ObjectId used to uniquely identify this log
-* `timestamp` is the [ISO-8601][] date time string parsed from the `id` (thanks to MongoDB BSON `ObjectID.getTimestamp` method)
-* `duration` is the number of milliseconds that `parseRequest` took to parse the request object (this is incredibly useful for alerting) – note that this uses `process.hrtime` which this package polyfills thanks to [browser-process-hrtime][]
-* `user` is parsed from the user object on `req.user` automatically (e.g. you are using [passport][])
-* `user` object will have an `ip_address` property added
-* `request.id` is conditionally added if `req.id` is a String – we highly recommend that you use [express-request-id][] in your project, which will automatically add this property if `X-Request-Id` if it is set, otherwise it will generate it as a new UUID
-* `request.file` and `request.files` are conditionally added if you have a `req.file` or `req.files` property (e.g. you are using [multer][])
-* `request.http_version` is parsed from `req.httpVersion` or `req.httpVersionMajor` and `req.httpVersionMinor`
-* `request.timestamp` is the [ISO-8601][] date time string parsed from `req[startTime]` – note that you **must be using the [request-received][] package for this property to be automatically added**
-* `request.duration` is the number of milliseconds that it took to send a response, and it is parsed from `X-Response-Time` header from `request.headers` - note that you must have `X-Response-Time` header (e.g. via [response-time][]) for this property to be automatically added
+* `id` (String) - is a newly created BSON ObjectId used to uniquely identify this log
+* `timestamp` (String) - is the [ISO-8601][] date time string parsed from the `id` (thanks to MongoDB BSON `ObjectID.getTimestamp` method)
+* `duration` (Number) - is the number of milliseconds that `parseRequest` took to parse the request object (note that this uses `process.hrtime` which this package polyfills thanks to [browser-process-hrtime][])
+* `user` (Object) - is parsed from the user object on `req.user` automatically (e.g. you are using [passport][]):
+  * `ip_address` (String) - IP address parsed
+  * `...` - additional fields are optionally parsed from `req.user`
+* `request` (Object) - request object information parsed from `options.req`:
+  * `id` (String) - is conditionally added if `req.id` is a String (we highly recommend that you use [express-request-id][] in your project, which will automatically add this property if `X-Request-Id` if it is set, otherwise it will generate it as a new UUID)
+  * `file` (Object) - is conditionally added if you have a `req.file` property (e.g. if you're using [multer][])
+  * `files` (Array) - is conditionally added if you have a `req.files` property (e.g. if you're using [multer][])
+  * `http_version` (String) - is parsed from `req.httpVersion` or `req.httpVersionMajor` and `req.httpVersionMinor`
+  * `timesamp` (String) - is the [ISO-8601][] date time string parsed from when the request was received (we highly recommend that you use [request-received][] for this to be parsed as accurately as possible, although we do support a few widely-used fallback approaches)
+  * `headers` (Object) - the raw request headers (lowercased)
+* `response` (Object) - response object information parsed from `options.responseHeaders` (we use [http-headers][] to parse this information):
+  * `http_version` (String) - is parsed from the response HTTP headers major and minor HTTP version
+  * `timestamp` (String) - is the [ISO-8601][] date time string parsed from the response's `Date` header
+  * `duration` (Number) - is the number of milliseconds parsed from the `X-Response-Time` HTTP header (we highly recommend that you use [response-time][] and [request-received][])
+  * `headers` (Object) - the raw response headers (lowercased)
+  * `status_code` (Number) - the response's status code (see RFC spec on [Status Code and Reason Phrase][rfc-spec])
+  * `reason_phrase` (String) - the response's reason phrase (see RFC spec on [Status Code and Reason Phrase][rfc-spec])
 
 Please see [Credit Card Masking](#credit-card-masking) and [Sensitive Field Names Automatically Masked](#sensitive-field-names-automatically-masked) below for more information about how `request.body`, `request.file`, and `request.files` are parsed and conditionally masked for security.
 
@@ -253,3 +294,7 @@ Sometimes developers overwrite `req.body` or `req.body` properties – therefore
 [iso-8601]: https://en.wikipedia.org/wiki/ISO_8601
 
 [response-time]: https://github.com/expressjs/response-time
+
+[http-headers]: https://github.com/watson/http-headers
+
+[rfc-spec]: https://www.w3.org/Protocols/rfc2616/rfc2616-sec6.html#sec6.1.1

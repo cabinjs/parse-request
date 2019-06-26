@@ -21,6 +21,8 @@ test.beforeEach.cb(t => {
   app.use(responseTime());
   app.use(requestId());
   app.use(cabin.middleware);
+  console.log('cabin', cabin);
+  console.log('cabin.config', cabin.config);
   t.context.app = app;
   t.context.server = app.listen(() => {
     t.end();
@@ -41,14 +43,9 @@ test.cb('express', t => {
       }
     ]),
     (req, res) => {
-      const result = parseRequest({ req });
-      t.true(typeof result.request.timestamp === 'string');
-      t.true(typeof result.request.id === 'string');
-      t.true(typeof result.id === 'string');
-      t.true(typeof result.timestamp === 'string');
-      t.true(typeof result.duration === 'number');
+      const obj = parseRequest({ req });
       req.logger.info('visited home page');
-      res.send('ok');
+      res.json(obj);
     }
   );
   const request = supertest(t.context.server);
@@ -67,5 +64,9 @@ test.cb('express', t => {
     .attach('boop', path.join(fixtures, 'boop-1.txt'))
     .attach('boop', path.join(fixtures, 'boop-2.txt'))
     .set('Cookie', ['foo=bar;beep=boop'])
-    .end(() => t.end());
+    .end((err, res) => {
+      t.is(err, null);
+      t.true(typeof res.body.request.timestamp === 'string');
+      t.end();
+    });
 });

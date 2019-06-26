@@ -4,6 +4,7 @@ const convertHrtime = require('convert-hrtime');
 const cookie = require('cookie');
 const creditCardType = require('credit-card-type');
 const hrtime = require('browser-process-hrtime');
+const httpHeaders = require('http-headers');
 const isArrayBuffer = require('is-array-buffer');
 const isBuffer = require('is-buffer');
 const isStream = require('is-stream');
@@ -252,6 +253,7 @@ const parseRequest = (config = {}, win) => {
 
   config = {
     req: {},
+    responseHeaders: '',
     userFields: ['id', 'email', 'full_name', 'ip_address'],
     sanitizeFields: sensitiveFields,
     sanitizeHeaders: ['authorization'],
@@ -279,6 +281,7 @@ const parseRequest = (config = {}, win) => {
 
   const {
     req,
+    responseHeaders,
     userFields,
     sanitizeFields,
     sanitizeHeaders,
@@ -314,6 +317,7 @@ const parseRequest = (config = {}, win) => {
       isHeaders: true
     }
   );
+
   const method = req.method || 'GET';
 
   // inspired from `preserve-qs` package
@@ -401,6 +405,10 @@ const parseRequest = (config = {}, win) => {
 
   const result = {
     id: id.toString(),
+    //
+    // NOTE: regarding the naming convention of `timestamp`, it seems to be the
+    // most widely used and supported property name across logging services
+    //
     timestamp: id.getTimestamp().toISOString(),
     request: {
       method,
@@ -409,14 +417,12 @@ const parseRequest = (config = {}, win) => {
       cookies,
       url: absoluteUrl
     },
-    user
+    user,
+    response: {} // populated below
   };
 
   if (parseBody) result.request.body = body;
 
-  //
-  // NOTE: regarding the naming convention of `timestamp`, it seems to be the
-  // most widely used and supported property name across logging services
   //
   // Also note that there is no standard for setting a request received time.
   //
@@ -449,7 +455,7 @@ const parseRequest = (config = {}, win) => {
   // * https://github.com/DrBarnabus/koa-req-logger/pull/2
   //
 
-  // add `request.timestamp`
+  // add request.timestamp (parse req[$x] variable)
   if (req[startTime] instanceof Date)
     result.request.timestamp = req[startTime].toISOString();
   else if (typeof req[startTime] === 'number')
@@ -461,9 +467,64 @@ const parseRequest = (config = {}, win) => {
   else if (typeof req._startTime === 'number')
     result.request.timestamp = new Date(req._startTime).toISOString();
 
-  // add `request.duration`
-  if (isString(headers['x-response-time']))
-    result.request.duration = ms(headers['x-response-time']);
+  //
+  // conditionally add a `response` object if and only if
+  // `responseHeaders` option was passed, and it was a non-empty string or object
+  //
+
+  if (isObject(responseHeaders) && Object.keys(responseHeaders).length > 0)
+    result.response.headers = clone(responseHeaders);
+  else if (isString(responseHeaders)) {
+    // <https://github.com/nodejs/node/issues/28302>
+    const parsedHeaders = httpHeaders(responseHeaders);
+    if (isObject(parsedHeaders.headers)) {
+      result.response.headers = parsedHeaders.headers;
+      // parse the status line
+      // <https://www.w3.org/Protocols/rfc2616/rfc2616-sec6.html#sec6.1>
+      if (
+        isObject(parsedHeaders.version) &&
+        typeof parsedHeaders.version.major === 'number' &&
+        typeof parsedHeaders.version.minor === 'number'
+      )
+        result.response.http_version = `${parsedHeaders.version.major}.${parsedHeaders.version.minor}`;
+      if (typeof parsedHeaders.statusCode === 'number')
+        result.response.status_code = parsedHeaders.statusCode;
+      if (isString(parsedHeaders.statusMessage))
+        result.response.reason_phrase = parsedHeaders.statusMessage;
+    } else {
+      result.response.headers = parsedHeaders;
+    }
+  }
+
+  if (result.response.headers) {
+    result.response.headers = maskProps(
+      headersToLowerCase(result.response.headers),
+      sanitizeHeaders,
+      { isHeaders: true }
+    );
+    if (
+      result.response.headers &&
+      Object.keys(result.response.headers).length === 0
+    ) {
+      delete result.response;
+    } else {
+      // add response.timestamp (response Date header)
+      try {
+        if (result.response.headers.date)
+          result.response.timestamp = new Date(
+            result.response.headers.date
+          ).toISOString();
+      } catch (err) {}
+
+      // add response.duration (parsed from response X-Response-Time header)
+      try {
+        if (result.response.headers['x-response-time']) {
+          const duration = ms(result.response.headers['x-response-time']);
+          if (typeof duration === 'number') result.response.duration = duration;
+        }
+      } catch (err) {}
+    }
+  }
 
   // add request's id if available from `req.id`
   if (isString(req.id)) result.request.id = req.id;

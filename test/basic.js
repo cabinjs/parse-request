@@ -77,70 +77,123 @@ test('parses req.id', t => {
   t.is(obj.request.id, 'foobar');
 });
 
-test('created an object id', t => {
+test('created an object id, timestamp, and duration', t => {
   const obj = parseRequest();
   t.true(typeof obj.id === 'string');
   t.true(ObjectId.isValid(obj.id));
+  t.true(typeof obj.timestamp === 'string');
+  t.true(typeof obj.duration === 'number');
+});
+
+test('parses responseHeaders as a string', t => {
+  const obj = parseRequest({
+    responseHeaders: [
+      'HTTP/1.1 200 OK',
+      'Date: Tue, 10 Jun 2014 07:19:27 GMT',
+      'Connection: keep-alive',
+      'Transfer-Encoding: chunked',
+      '',
+      'Hello World'
+    ].join('\r\n')
+  });
+  t.is(obj.response.http_version, '1.1');
+  t.is(obj.response.status_code, 200);
+  t.is(obj.response.reason_phrase, 'OK');
+  t.true(typeof obj.response.headers.date === 'string');
+});
+
+test('parses responseHeaders as a string w/o HTTP line', t => {
+  const obj = parseRequest({
+    responseHeaders: [
+      'Date: Tue, 10 Jun 2014 07:19:27 GMT',
+      'Connection: keep-alive',
+      'Transfer-Encoding: chunked',
+      '',
+      'Hello World'
+    ].join('\r\n')
+  });
+  t.true(typeof obj.response.status_code === 'undefined');
+  t.true(typeof obj.response.headers.date === 'string');
 });
 
 test('parses start time and start date as date', t => {
   const req = {};
   req[startTime] = new Date();
-  req.headers = {
-    'X-Response-Time': '500 ms'
-  };
-  const obj = parseRequest({ req });
-  t.true(typeof obj.duration === 'number');
+  const obj = parseRequest({
+    req,
+    responseHeaders: {
+      Date: new Date().toISOString(),
+      'X-Response-Time': '500 ms'
+    }
+  });
   t.true(typeof obj.request.timestamp === 'string');
-  t.true(typeof obj.request.duration === 'number');
+  t.true(typeof obj.response.timestamp === 'string');
+  t.true(typeof obj.response.headers.date === 'string');
+  t.true(typeof obj.response.duration === 'number');
 });
 
 test('works with morgan req._startTime date', t => {
   const req = {};
   req._startTime = new Date();
-  req.headers = {
-    'X-Response-Time': '500 ms'
-  };
-  const obj = parseRequest({ req });
-  t.true(typeof obj.duration === 'number');
+  const obj = parseRequest({
+    req,
+    responseHeaders: {
+      Date: new Date().toISOString(),
+      'X-Response-Time': '500 ms'
+    }
+  });
   t.true(typeof obj.request.timestamp === 'string');
-  t.true(typeof obj.request.duration === 'number');
+  t.true(typeof obj.response.timestamp === 'string');
+  t.true(typeof obj.response.headers.date === 'string');
+  t.true(typeof obj.response.duration === 'number');
 });
 
 test('works with morgan req._startTime number', t => {
   const req = {};
   req._startTime = Date.now();
-  req.headers = {
-    'X-Response-Time': '500 ms'
-  };
-  const obj = parseRequest({ req });
-  t.true(typeof obj.duration === 'number');
+  const obj = parseRequest({
+    req,
+    responseHeaders: {
+      Date: new Date().toISOString(),
+      'X-Response-Time': '500 ms'
+    }
+  });
   t.true(typeof obj.request.timestamp === 'string');
-  t.true(typeof obj.request.duration === 'number');
+  t.true(typeof obj.response.timestamp === 'string');
+  t.true(typeof obj.response.headers.date === 'string');
+  t.true(typeof obj.response.duration === 'number');
 });
 
 test('parses start time and start date as number', t => {
   const req = {};
   req[startTime] = Date.now();
-  req.headers = {
-    'X-Response-Time': '500 ms'
-  };
-  const obj = parseRequest({ req });
-  t.true(typeof obj.duration === 'number');
+  const obj = parseRequest({
+    req,
+    responseHeaders: {
+      Date: new Date().toISOString(),
+      'X-Response-Time': '500 ms'
+    }
+  });
   t.true(typeof obj.request.timestamp === 'string');
-  t.true(typeof obj.request.duration === 'number');
+  t.true(typeof obj.response.timestamp === 'string');
+  t.true(typeof obj.response.headers.date === 'string');
+  t.true(typeof obj.response.duration === 'number');
 });
 
 test('parses pino start time and start date', t => {
   const req = {};
   req[pinoHttpStartTime] = Date.now();
-  req.headers = {
-    'X-Response-Time': '500 ms'
-  };
-  const obj = parseRequest({ req });
-  t.true(typeof obj.duration === 'number');
+  const obj = parseRequest({
+    req,
+    responseHeaders: {
+      Date: new Date().toISOString(),
+      'X-Response-Time': '500 ms'
+    }
+  });
   t.true(typeof obj.request.timestamp === 'string');
-  t.true(typeof obj.request.duration === 'number');
+  t.true(typeof obj.response.timestamp === 'string');
+  t.true(typeof obj.response.headers.date === 'string');
+  t.true(typeof obj.response.duration === 'number');
 });
 
 test('uses req.url', t => {
