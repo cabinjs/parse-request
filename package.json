@@ -71,7 +71,6 @@
     "rimraf": "^2.6.3",
     "supertest": "^4.0.2",
     "tinyify": "^2.5.1",
-    "window": "^4.2.6",
     "xo": "^0.24.0"
   },
   "engines": {

@@ -47,7 +47,8 @@ yarn add parse-request
 This package exports a function that accepts an Object `options` argument:
 
 * `options` (Object) - a configuration object
-  * `req` (Object) - an HTTP request
+  * `req` (Object) - an Express/Connect request object (defaults to `false`) (you must either pass this option or `ctx` option, but not both)
+  * `ctx` (Object) - a Koa context object (defaults to `false`) (you must either pass this option or `req` option, but not both)
   * `responseHeaders` (String or Object) - we highly recommend that you pass `res._headers` (see [Cabin][]'s middleware logic if you need an example of this)
   * `userFields` (Array) - defaults to `[ 'id', 'email', 'full_name', 'ip_address' ]`, list of fields to cherry-pick from the user object parsed out of `req.user`
   * `sanitizeFields` (Array) - defaults to the list of Strings provided under [Sensitive Field Names Automatically Masked](#sensitive-field-names-automatically-masked) below

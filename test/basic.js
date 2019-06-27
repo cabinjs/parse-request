@@ -209,18 +209,6 @@ test('uses req.url', t => {
   t.deepEqual(body.foo, { type: 'Stream' });
 });
 
-test('uses req.connection.remoteAddress', t => {
-  const obj = parseRequest({
-    req: {
-      method: 'GET',
-      connection: {
-        remoteAddress: '1.2.3.4'
-      }
-    }
-  });
-  t.is(obj.user.ip_address, '1.2.3.4');
-});
-
 test('masks referrer if referer is set', t => {
   const obj = parseRequest({
     req: {
@@ -566,7 +554,7 @@ test('GET/HEAD empty String `request.body`', t => {
         body: 'hello world'
       }
     }).request.body,
-    ''
+    undefined
   );
   t.is(
     parseRequest({
@@ -575,7 +563,7 @@ test('GET/HEAD empty String `request.body`', t => {
         body: 'hello world'
       }
     }).request.body,
-    ''
+    undefined
   );
 });
 

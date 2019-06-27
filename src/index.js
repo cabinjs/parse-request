@@ -247,12 +247,13 @@ function maskProps(obj, props, options) {
 
 // inspired by raven's parseRequest
 // eslint-disable-next-line complexity
-const parseRequest = (config = {}, win) => {
+const parseRequest = (config = {}) => {
   const start = hrtime();
   const id = new ObjectId();
 
   config = {
-    req: {},
+    req: false,
+    ctx: false,
     responseHeaders: '',
     userFields: ['id', 'email', 'full_name', 'ip_address'],
     sanitizeFields: sensitiveFields,
@@ -274,13 +275,11 @@ const parseRequest = (config = {}, win) => {
     ...config
   };
 
-  // <https://github.com/lukechilds/window#universal-testing-pattern>
-  win = win || (typeof window === 'undefined' ? undefined : window);
-
   const clone = rfdc(config.rfdc);
 
   const {
     req,
+    ctx,
     responseHeaders,
     userFields,
     sanitizeFields,
@@ -296,6 +295,12 @@ const parseRequest = (config = {}, win) => {
     parseFiles
   } = config;
 
+  // do not allow both `req` and `ctx` to be specified
+  if (req && ctx)
+    throw new Error(
+      'You must either use `req` (Express/Connect) or `ctx` (Koa) option, but not both'
+    );
+
   const maskPropsOptions = {
     maskCreditCards,
     checkId,
@@ -310,52 +315,69 @@ const parseRequest = (config = {}, win) => {
     checkObjectId
   };
 
-  const headers = maskProps(
-    headersToLowerCase(req.headers || req.header || {}),
-    sanitizeHeaders,
-    {
-      isHeaders: true
-    }
-  );
+  let headers;
+  let requestHeaders;
 
-  const method = req.method || 'GET';
+  if (ctx) requestHeaders = ctx.req.headers || ctx.req.header;
+  else if (req) requestHeaders = req.headers || req.header;
+
+  if (requestHeaders)
+    headers = maskProps(headersToLowerCase(requestHeaders), sanitizeHeaders, {
+      isHeaders: true
+    });
+
+  let method;
+  if (ctx) method = ctx.method;
+  else if (req) method = req.method;
 
   // inspired from `preserve-qs` package
-  let originalUrl = '';
-  if (isString(req.originalUrl)) ({ originalUrl } = req);
-  else if (isString(req.url)) originalUrl = req.url;
-  else if (win) originalUrl = win.location.pathname + win.location.search;
-  originalUrl = new Url(originalUrl, {});
+  let originalUrl;
+  if (ctx) originalUrl = ctx.originalUrl || ctx.url;
+  else if (req) originalUrl = req.originalUrl || req.url;
 
-  // parse query, path, and origin to prepare absolute Url
-  const query = Url.qs.parse(originalUrl.query);
-  const path =
-    originalUrl.origin === 'null'
-      ? originalUrl.pathname
-      : `${originalUrl.origin}${originalUrl.pathname}`;
-  const qs = Url.qs.stringify(query, true);
-  const absoluteUrl = path + qs;
+  let query;
+  let absoluteUrl;
+  if (originalUrl) {
+    originalUrl = new Url(originalUrl, {});
+
+    // parse query, path, and origin to prepare absolute Url
+    query = Url.qs.parse(originalUrl.query);
+    const path =
+      originalUrl.origin === 'null'
+        ? originalUrl.pathname
+        : `${originalUrl.origin}${originalUrl.pathname}`;
+    const qs = Url.qs.stringify(query, true);
+    absoluteUrl = path + qs;
+  }
 
   // default to the user object
-  let user = isObject(req.user)
-    ? typeof req.user.toObject === 'function'
-      ? req.user.toObject()
-      : clone(req.user)
-    : {};
+  let user = {};
 
-  let ip = '';
-  if (isString(req.ip)) ({ ip } = req);
-  else if (isObject(req.connection) && isString(req.connection.remoteAddress))
-    ip = req.connection.remoteAddress;
+  if (ctx && isObject(ctx.state.user)) {
+    user =
+      typeof ctx.state.user.toObject === 'function'
+        ? ctx.state.user.toObject()
+        : clone(ctx.state.user);
+  } else if (req && isObject(req.user)) {
+    user =
+      typeof req.user.toObject === 'function'
+        ? req.user.toObject()
+        : clone(req.user);
+  }
+
+  let ip;
+  if (ctx) ip = ctx.ip;
+  else if (req) ip = req.ip;
+
   if (ip && !isString(user.ip_address)) user.ip_address = ip;
 
-  if (Array.isArray(userFields) && userFields.length > 0)
+  if (user && Array.isArray(userFields) && userFields.length > 0)
     user = pick(user, userFields);
 
   // recursively search through user and filter out passwords from it
-  user = maskProps(user, sanitizeFields, maskPropsOptions);
+  if (user) user = maskProps(user, sanitizeFields, maskPropsOptions);
 
-  let body = '';
+  let body;
   const originalBody = req._originalBody || req.body;
 
   if (parseBody) {
@@ -375,33 +397,9 @@ const parseRequest = (config = {}, win) => {
       body = safeStringify(body);
   }
 
-  // populate user agent and referrer if
-  // we're in a browser and they're unset
-  if (win) {
-    // set user agent
-    if (
-      typeof win.navigator !== 'undefined' &&
-      isObject(win.navigator) &&
-      isString(win.navigator.userAgent) &&
-      !isString(headers['user-agent'])
-    )
-      headers['user-agent'] = win.navigator.userAgent;
-    if (typeof win.document !== 'undefined' && isObject(win.document)) {
-      // set referrer
-      if (
-        isString(win.document.referrer) &&
-        !isString(headers.referer) &&
-        !isString(headers.referrer)
-      )
-        headers.referer = win.document.referrer;
-      // set cookie
-      if (isString(win.document.cookie) && !isString(headers.cookie))
-        headers.cookie = win.document.cookie;
-    }
-  }
-
   // parse the cookies (if any were set)
-  const cookies = cookie.parse(headers.cookie || '');
+  let cookies;
+  if (headers && headers.cookie) cookies = cookie.parse(headers.cookie);
 
   const result = {
     id: id.toString(),
@@ -409,19 +407,18 @@ const parseRequest = (config = {}, win) => {
     // NOTE: regarding the naming convention of `timestamp`, it seems to be the
     // most widely used and supported property name across logging services
     //
-    timestamp: id.getTimestamp().toISOString(),
-    request: {
-      method,
-      query,
-      headers,
-      cookies,
-      url: absoluteUrl
-    },
-    user,
-    response: {} // populated below
+    timestamp: id.getTimestamp().toISOString()
   };
 
-  if (parseBody) result.request.body = body;
+  if (ctx || req) result.request = {};
+  if (method) result.request.method = method;
+  if (query) result.request.query = query;
+  if (headers) result.request.headers = headers;
+  if (cookies) result.request.cookies = cookies;
+  if (absoluteUrl) result.request.url = absoluteUrl;
+  if (user) result.user = user;
+
+  if (parseBody && body) result.request.body = body;
 
   //
   // Also note that there is no standard for setting a request received time.
@@ -472,11 +469,13 @@ const parseRequest = (config = {}, win) => {
   // `responseHeaders` option was passed, and it was a non-empty string or object
   //
 
-  if (isObject(responseHeaders) && Object.keys(responseHeaders).length > 0)
+  if (isObject(responseHeaders) && Object.keys(responseHeaders).length > 0) {
+    result.response = {};
     result.response.headers = clone(responseHeaders);
-  else if (isString(responseHeaders)) {
+  } else if (isString(responseHeaders)) {
     // <https://github.com/nodejs/node/issues/28302>
     const parsedHeaders = httpHeaders(responseHeaders);
+    result.response = {};
     if (isObject(parsedHeaders.headers)) {
       result.response.headers = parsedHeaders.headers;
       // parse the status line
@@ -496,7 +495,7 @@ const parseRequest = (config = {}, win) => {
     }
   }
 
-  if (result.response.headers) {
+  if (result.response && result.response.headers) {
     result.response.headers = maskProps(
       headersToLowerCase(result.response.headers),
       sanitizeHeaders,
@@ -527,26 +526,72 @@ const parseRequest = (config = {}, win) => {
   }
 
   // add request's id if available from `req.id`
-  if (isString(req.id)) result.request.id = req.id;
+  let requestId;
+  if (ctx) {
+    if (isString(ctx.id)) requestId = ctx.id;
+    else if (isString(ctx.request.id)) requestId = ctx.request.id;
+    else if (isString(ctx.req.id)) requestId = ctx.req.id;
+    else if (isString(ctx.state.reqId)) requestId = ctx.state.reqId;
+    else if (isString(ctx.state.id)) requestId = ctx.state.id;
+  } else if (req && isString(req.id)) {
+    requestId = req.id;
+  }
+
+  // TODO: we should probably validate this id somehow
+  // (e.g. like we do with checking if cuid or uuid or objectid)
+  if (requestId) result.request.id = requestId;
+  else if (headers && headers['x-request-id'])
+    result.request.id = headers['x-request-id'];
 
   // add httpVersion if possible (server-side only)
-  if (isString(req.httpVersion)) result.request.http_version = req.httpVersion;
-  else if (
-    (typeof req.httpVersionMajor === 'number' &&
-      typeof req.httpVersionMinor === 'number') ||
-    (isString(req.httpVersionMajor) && isString(req.httpVersionMinor))
-  )
-    result.request.http_version = `${req.httpVersionMajor}.${req.httpVersionMinor}`;
+  let httpVersion;
+  if (ctx) httpVersion = ctx.req.httpVersion;
+  else if (req) httpVersion = req.httpVersion;
+
+  if (isString(httpVersion)) result.request.http_version = httpVersion;
+  else {
+    let httpVersionMajor;
+    let httpVersionMinor;
+    if (ctx) {
+      httpVersionMajor = ctx.req.httpVersionMajor;
+      httpVersionMinor = ctx.req.httpVersionMinor;
+    } else if (req) {
+      httpVersionMajor = req.httpVersionMajor;
+      httpVersionMinor = req.httpVersionMinor;
+    }
+
+    if (
+      (typeof httpVersionMajor === 'number' &&
+        typeof httpVersionMinor === 'number') ||
+      (isString(httpVersionMajor) && isString(httpVersionMinor))
+    )
+      result.request.http_version = `${httpVersionMajor}.${httpVersionMinor}`;
+  }
 
   // parse `req.file` and `req.files` for multer v1.x and v2.x
   if (parseFiles) {
-    if (typeof req.file === 'object')
+    // koa-multer@1.x binded to `ctx.req`
+    // and then koa-multer was forked by @niftylettuce to @koajs/multer
+    // and the 2.0.0 release changed it so it uses `ctx.file` and `ctx.files`
+    // (so it doesn't bind to the `ctx.req` Node original request object
+    // <https://github.com/koa-modules/multer/pull/15>
+    let file;
+    let files;
+    if (ctx) {
+      file = ctx.file || ctx.request.file || ctx.req.file;
+      files = ctx.files || ctx.request.files || ctx.req.files;
+    } else if (req) {
+      file = req.file;
+      files = req.files;
+    }
+
+    if (typeof file === 'object')
       result.request.file = safeStringify(
-        clone(maskSpecialTypes(req.file, maskSpecialTypesOptions))
+        clone(maskSpecialTypes(file, maskSpecialTypesOptions))
       );
-    if (typeof req.files === 'object')
+    if (typeof files === 'object')
       result.request.files = safeStringify(
-        clone(maskSpecialTypes(req.files, maskSpecialTypesOptions))
+        clone(maskSpecialTypes(files, maskSpecialTypesOptions))
       );
   }
 
