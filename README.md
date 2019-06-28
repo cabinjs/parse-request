@@ -245,7 +245,63 @@ app.get('/', (req, res, next) => {
 
 #### If you override req.body and need to preserve original in logs
 
-Sometimes developers overwrite `req.body` or `req.body` properties – therefore if you want to preserve the original request, you can add `req._originalBody = req.body` at the top of your route middleware (or as a global route middleware).
+Sometimes developers overwrite `req.body` or `req.body` properties – therefore if you want to preserve the original request, you can add `req._originalBody = req.body` (or `ctx.request._originalBody = ctx.request.body` if you're using Koa) at the top of your route middleware (or as a global route middleware).
+
+#### If you want to disable body parsing just for a specific route (e.g. prevent log output from showing the body)
+
+If you're using Express:
+
+```js
+const disableBodyParsing = Symbol.for('parse-request.disableBodyParsing');
+
+// ...
+
+app.get('/', (req, res, next) => {
+  req[disableBodyParsing] = true;
+  next();
+});
+```
+
+If you're using Koa:
+
+```js
+const disableBodyParsing = Symbol.for('parse-request.disableBodyParsing');
+
+// ...
+
+app.get('/', (ctx, next) => {
+  ctx.req[disableBodyParsing] = true;
+  next();
+});
+```
+
+#### If you want to disable file parsing just for a specific route (e.g. prevent log output from showing the file(s))
+
+If you're using Express:
+
+```js
+const disableFileParsing = Symbol.for('parse-request.disableFileParsing');
+
+// ...
+
+app.get('/', (req, res, next) => {
+  req[disableFileParsing] = true;
+  next();
+});
+```
+
+If you're using Koa:
+
+```js
+const disableFileParsing = Symbol.for('parse-request.disableFileParsing');
+
+// ...
+
+app.get('/', (ctx, next) => {
+  ctx.req[disableFileParsing] = true;
+  next();
+});
+```
 
 
 ## Contributors

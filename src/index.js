@@ -19,6 +19,9 @@ const sensitiveFields = require('sensitive-fields');
 const startTime = Symbol.for('request-received.startTime');
 const pinoHttpStartTime = Symbol.for('pino-http.startTime');
 
+const disableBodyParsingSymbol = Symbol.for('parse-request.disableBodyParsing');
+const disableFileParsingSymbol = Symbol.for('parse-request.disableFileParsing');
+
 const hashMapIds = {
   _id: true,
   id: true
@@ -166,6 +169,7 @@ function isID(val, options) {
 
 function maskString(key, val, props, options) {
   const isKeyString = isString(key);
+
   if (options.isHeaders) {
     // headers are case-insensitive
     props = props.map(prop => prop.toLowerCase());
@@ -173,7 +177,11 @@ function maskString(key, val, props, options) {
       if (props.indexOf('referer') === -1) props.push('referer');
       if (props.indexOf('referrer') === -1) props.push('referrer');
     }
-  } else {
+  }
+
+  const notIncludedInProps = !isKeyString || props.indexOf(key) === -1;
+
+  if (!options.isHeaders) {
     // check if it closely resembles a primary ID and return early if so
     if (isKeyString && options.checkId) {
       // _id
@@ -191,16 +199,15 @@ function maskString(key, val, props, options) {
     }
 
     // if it was an objectid, cuid, or uuid return early
-    if (isID(val, options)) return val;
+    if (isID(val, options) && notIncludedInProps) return val;
 
     // if it was a credit card then replace all digits with asterisk
     if (options.maskCreditCards && isCreditCard(val))
       return val.replace(/[^\D\s]/g, '*');
   }
 
-  if (!isKeyString) return val;
+  if (notIncludedInProps) return val;
 
-  if (props.indexOf(key) === -1) return val;
   // replace only the authentication <credentials> portion with asterisk
   // Authorization: <type> <credentials>
   if (options.isHeaders && key === 'authorization')
@@ -301,6 +308,8 @@ const parseRequest = (config = {}) => {
       'You must either use `req` (Express/Connect) or `ctx` (Koa) option, but not both'
     );
 
+  const nodeReq = ctx ? ctx.req : req ? req : {};
+
   const maskPropsOptions = {
     maskCreditCards,
     checkId,
@@ -315,11 +324,8 @@ const parseRequest = (config = {}) => {
     checkObjectId
   };
 
+  const requestHeaders = nodeReq.headers;
   let headers;
-  let requestHeaders;
-
-  if (ctx) requestHeaders = ctx.req.headers || ctx.req.header;
-  else if (req) requestHeaders = req.headers || req.header;
 
   if (requestHeaders)
     headers = maskProps(headersToLowerCase(requestHeaders), sanitizeHeaders, {
@@ -365,9 +371,7 @@ const parseRequest = (config = {}) => {
         : clone(req.user);
   }
 
-  let ip;
-  if (ctx) ip = ctx.ip;
-  else if (req) ip = req.ip;
+  const ip = ctx ? ctx.ip : req ? req.ip : null;
 
   if (ip && !isString(user.ip_address)) user.ip_address = ip;
 
@@ -378,21 +382,25 @@ const parseRequest = (config = {}) => {
   if (user) user = maskProps(user, sanitizeFields, maskPropsOptions);
 
   let body;
-  const originalBody = req._originalBody || req.body;
+  const originalBody = ctx
+    ? ctx.request._originalBody || ctx.request.body
+    : req
+    ? req._originalBody || req.body
+    : null;
 
-  if (parseBody) {
+  if (originalBody && parseBody && !nodeReq[disableBodyParsingSymbol]) {
+    //
+    // recursively search through body and filter out passwords from it
     // <https://github.com/niftylettuce/frisbee/issues/68>
     // <https://github.com/bitinn/node-fetch/blob/master/src/request.js#L75-L78>
+    //
     if (['GET', 'HEAD'].indexOf(method) === -1 && !isUndefined(originalBody))
       body = clone(
         maskBuffers || maskStreams
           ? maskSpecialTypes(originalBody, maskSpecialTypesOptions)
           : originalBody
       );
-
-    // recursively search through body and filter out passwords from it
     body = maskProps(body, sanitizeFields, maskPropsOptions);
-
     if (!isUndefined(body) && !isNull(body) && !isString(body))
       body = safeStringify(body);
   }
@@ -418,7 +426,8 @@ const parseRequest = (config = {}) => {
   if (absoluteUrl) result.request.url = absoluteUrl;
   if (user) result.user = user;
 
-  if (parseBody && body) result.request.body = body;
+  if (originalBody && parseBody && body && !nodeReq[disableBodyParsingSymbol])
+    result.request.body = body;
 
   //
   // Also note that there is no standard for setting a request received time.
@@ -453,16 +462,18 @@ const parseRequest = (config = {}) => {
   //
 
   // add request.timestamp (parse req[$x] variable)
-  if (req[startTime] instanceof Date)
-    result.request.timestamp = req[startTime].toISOString();
-  else if (typeof req[startTime] === 'number')
-    result.request.timestamp = new Date(req[startTime]).toISOString();
-  else if (typeof req[pinoHttpStartTime] === 'number')
-    result.request.timestamp = new Date(req[pinoHttpStartTime]).toISOString();
-  else if (req._startTime instanceof Date)
-    result.request.timestamp = req._startTime.toISOString();
-  else if (typeof req._startTime === 'number')
-    result.request.timestamp = new Date(req._startTime).toISOString();
+  if (nodeReq[startTime] instanceof Date)
+    result.request.timestamp = nodeReq[startTime].toISOString();
+  else if (typeof nodeReq[startTime] === 'number')
+    result.request.timestamp = new Date(nodeReq[startTime]).toISOString();
+  else if (typeof nodeReq[pinoHttpStartTime] === 'number')
+    result.request.timestamp = new Date(
+      nodeReq[pinoHttpStartTime]
+    ).toISOString();
+  else if (nodeReq._startTime instanceof Date)
+    result.request.timestamp = nodeReq._startTime.toISOString();
+  else if (typeof nodeReq._startTime === 'number')
+    result.request.timestamp = new Date(nodeReq._startTime).toISOString();
 
   //
   // conditionally add a `response` object if and only if
@@ -544,32 +555,18 @@ const parseRequest = (config = {}) => {
     result.request.id = headers['x-request-id'];
 
   // add httpVersion if possible (server-side only)
-  let httpVersion;
-  if (ctx) httpVersion = ctx.req.httpVersion;
-  else if (req) httpVersion = req.httpVersion;
+  const { httpVersion, httpVersionMajor, httpVersionMinor } = nodeReq;
 
   if (isString(httpVersion)) result.request.http_version = httpVersion;
-  else {
-    let httpVersionMajor;
-    let httpVersionMinor;
-    if (ctx) {
-      httpVersionMajor = ctx.req.httpVersionMajor;
-      httpVersionMinor = ctx.req.httpVersionMinor;
-    } else if (req) {
-      httpVersionMajor = req.httpVersionMajor;
-      httpVersionMinor = req.httpVersionMinor;
-    }
-
-    if (
-      (typeof httpVersionMajor === 'number' &&
-        typeof httpVersionMinor === 'number') ||
-      (isString(httpVersionMajor) && isString(httpVersionMinor))
-    )
-      result.request.http_version = `${httpVersionMajor}.${httpVersionMinor}`;
-  }
+  else if (
+    (typeof httpVersionMajor === 'number' &&
+      typeof httpVersionMinor === 'number') ||
+    (isString(httpVersionMajor) && isString(httpVersionMinor))
+  )
+    result.request.http_version = `${httpVersionMajor}.${httpVersionMinor}`;
 
   // parse `req.file` and `req.files` for multer v1.x and v2.x
-  if (parseFiles) {
+  if (parseFiles && !nodeReq[disableFileParsingSymbol]) {
     // koa-multer@1.x binded to `ctx.req`
     // and then koa-multer was forked by @niftylettuce to @koajs/multer
     // and the 2.0.0 release changed it so it uses `ctx.file` and `ctx.files`

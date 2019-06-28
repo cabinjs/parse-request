@@ -1,11 +1,13 @@
 const path = require('path');
 
 const test = require('ava');
-const express = require('express');
-const multer = require('multer');
+const Koa = require('koa');
+const multer = require('@koa/multer');
 const requestId = require('express-request-id');
 const requestReceived = require('request-received');
 const responseTime = require('response-time');
+const Router = require('@koa/router');
+const koaConnect = require('koa-connect');
 const supertest = require('supertest');
 const Cabin = require('cabin');
 const { Signale } = require('signale');
@@ -18,17 +20,18 @@ const fixtures = path.join(__dirname, 'fixtures');
 const upload = multer();
 
 test.beforeEach.cb(t => {
-  const app = express();
+  const app = new Koa();
   const cabin = new Cabin({
     axe: {
       logger: new Signale()
     }
   });
   app.use(requestReceived);
-  app.use(responseTime());
-  app.use(requestId());
+  app.use(koaConnect(responseTime()));
+  app.use(koaConnect(requestId()));
   app.use(cabin.middleware);
-  app.post(
+  const router = new Router();
+  router.post(
     '/',
     upload.fields([
       {
@@ -40,22 +43,23 @@ test.beforeEach.cb(t => {
         maxCount: 2
       }
     ]),
-    (req, res) => {
-      if (req.query._originalBody) req._originalBody = true;
-      if (req.query.disableBodyParsing) req[disableBodyParsing] = true;
-      if (req.query.disableFileParsing) req[disableFileParsing] = true;
-      const obj = parseRequest({ req });
-      req.logger.info('visited home page');
-      res.json(obj);
+    ctx => {
+      if (ctx.query._originalBody) ctx.request._originalBody = true;
+      if (ctx.query.disableBodyParsing) ctx.req[disableBodyParsing] = true;
+      if (ctx.query.disableFileParsing) ctx.req[disableFileParsing] = true;
+      const obj = parseRequest({ ctx });
+      ctx.logger.info('visited home page');
+      ctx.body = obj;
     }
   );
-  t.context.app = app;
+  app.use(router.routes());
+  app.use(router.allowedMethods());
   t.context.server = app.listen(() => {
     t.end();
   });
 });
 
-test.cb('express', t => {
+test.cb('koa', t => {
   const request = supertest(t.context.server);
   request
     .post('/?foo=bar&beep=boop')
@@ -88,7 +92,7 @@ test.cb('express', t => {
     });
 });
 
-test.cb('express with req._originalBody set', t => {
+test.cb('koa with req._originalBody set', t => {
   const request = supertest(t.context.server);
   request
     .post('/?_originalBody=true')
@@ -113,7 +117,7 @@ test.cb('express with req._originalBody set', t => {
     });
 });
 
-test.cb('express with body parsing disabled', t => {
+test.cb('koa with body parsing disabled', t => {
   const request = supertest(t.context.server);
   request
     .post('/?disableBodyParsing=true')
@@ -138,7 +142,7 @@ test.cb('express with body parsing disabled', t => {
     });
 });
 
-test.cb('express with file parsing disabled', t => {
+test.cb('koa with file parsing disabled', t => {
   const request = supertest(t.context.server);
   request
     .post('/?disableFileParsing=true')
