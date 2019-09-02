@@ -13,7 +13,8 @@
       "Symbol.prototype",
       "Number.isFinite",
       "Object.getOwnPropertySymbols",
-      "Symbol.for"
+      "Symbol.for",
+      "Object.assign"
     ]
   }
 }

@@ -187,7 +187,7 @@ We highly recommend to simply use [Cabin][] as this package is built-in!
 The example below uses [xhook][] which is used to intercept HTTP requests made in the browser.
 
 ```html
-<script src="https://polyfill.io/v3/polyfill.min.js?features=es6,Number.isFinite,Object.getOwnPropertySymbols,Symbol.iterator,Symbol.prototype,Symbol.for"></script>
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6,Number.isFinite,Object.getOwnPropertySymbols,Symbol.iterator,Symbol.prototype,Symbol.for,Object.assign"></script>
 <script src="https://unpkg.com/xhook"></script>
 <script src="https://unpkg.com/parse-request"></script>
 <script type="text/javascript">
@@ -206,7 +206,7 @@ The example below uses [xhook][] which is used to intercept HTTP requests made i
 We recommend using <https://polyfill.io> (specifically with the bundle mentioned in [VanillaJS](#vanillajs) above):
 
 ```html
-<script src="https://polyfill.io/v3/polyfill.min.js?features=es6,Number.isFinite,Object.getOwnPropertySymbols,Symbol.iterator,Symbol.prototype,Symbol.for"></script>
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6,Number.isFinite,Object.getOwnPropertySymbols,Symbol.iterator,Symbol.prototype,Symbol.for,Object.assign"></script>
 ```
 
 * Number.isFinite() is not supported in IE 10
@@ -214,6 +214,7 @@ We recommend using <https://polyfill.io> (specifically with the bundle mentioned
 * Symbol.iterator() is not supported in IE 10
 * Symbol.prototype() is not supported in IE 10
 * Symbol.for() is not supported in IE 10
+* Object.assign() is not supported in IE 10
 
 ### Koa
 

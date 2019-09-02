@@ -39,12 +39,14 @@ function maskArray(obj, options) {
 }
 
 function maskSpecialTypes(obj, options) {
-  options = {
-    maskBuffers: true,
-    maskStreams: true,
-    checkObjectId: true,
-    ...options
-  };
+  options = Object.assign(
+    {
+      maskBuffers: true,
+      maskStreams: true,
+      checkObjectId: true
+    },
+    options
+  );
   if (typeof obj !== 'object') return obj;
 
   // we need to return an array if passed an array
@@ -229,15 +231,17 @@ function headersToLowerCase(headers) {
 }
 
 function maskProps(obj, props, options) {
-  options = {
-    maskCreditCards: true,
-    isHeaders: false,
-    checkId: true,
-    checkCuid: true,
-    checkObjectId: true,
-    checkUUID: true,
-    ...options
-  };
+  options = Object.assign(
+    {
+      maskCreditCards: true,
+      isHeaders: false,
+      checkId: true,
+      checkCuid: true,
+      checkObjectId: true,
+      checkUUID: true
+    },
+    options
+  );
 
   if (isString(obj)) return maskString(null, obj, props, options);
 
@@ -258,29 +262,31 @@ const parseRequest = (config = {}) => {
   const start = hrtime();
   const id = new ObjectId();
 
-  config = {
-    req: false,
-    ctx: false,
-    responseHeaders: '',
-    userFields: ['id', 'email', 'full_name', 'ip_address'],
-    sanitizeFields: sensitiveFields,
-    sanitizeHeaders: ['authorization'],
-    maskCreditCards: true,
-    maskBuffers: true,
-    maskStreams: true,
-    checkId: true,
-    checkCuid: true,
-    checkObjectId: true,
-    checkUUID: true,
-    // <https://github.com/davidmarkclements/rfdc>
-    rfdc: {
-      proto: false,
-      circles: false
+  config = Object.assign(
+    {
+      req: false,
+      ctx: false,
+      responseHeaders: '',
+      userFields: ['id', 'email', 'full_name', 'ip_address'],
+      sanitizeFields: sensitiveFields,
+      sanitizeHeaders: ['authorization'],
+      maskCreditCards: true,
+      maskBuffers: true,
+      maskStreams: true,
+      checkId: true,
+      checkCuid: true,
+      checkObjectId: true,
+      checkUUID: true,
+      // <https://github.com/davidmarkclements/rfdc>
+      rfdc: {
+        proto: false,
+        circles: false
+      },
+      parseBody: true,
+      parseFiles: true
     },
-    parseBody: true,
-    parseFiles: true,
-    ...config
-  };
+    config
+  );
 
   const clone = rfdc(config.rfdc);
 
