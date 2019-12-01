@@ -3,6 +3,7 @@ const Url = require('url-parse');
 const convertHrtime = require('convert-hrtime');
 const cookie = require('cookie');
 const creditCardType = require('credit-card-type');
+const debug = require('debug')('parse-request');
 const hrtime = require('browser-process-hrtime');
 const httpHeaders = require('http-headers');
 const isArrayBuffer = require('is-array-buffer');
@@ -31,8 +32,8 @@ const regexId = /_id$/;
 
 function maskArray(obj, options) {
   const arr = [];
-  for (let i = 0; i < obj.length; i++) {
-    arr[i] = maskSpecialTypes(obj[i], options);
+  for (const [i, element] of obj.entries()) {
+    arr[i] = maskSpecialTypes(element, options);
   }
 
   return arr;
@@ -137,9 +138,8 @@ function isCreditCard(val) {
   const types = creditCardType(digits);
   if (!Array.isArray(types) || types.length === 0) return false;
   let match = false;
-  for (let t = 0; t < types.length; t++) {
+  for (const type of types) {
     if (match) break;
-    const type = types[t];
     // can match any one of the lengths
     if (!Array.isArray(type.lengths) || type.lengths.length === 0) continue;
     for (let l = 0; l < type.lengths.length; l++) {
@@ -175,13 +175,13 @@ function maskString(key, val, props, options) {
   if (options.isHeaders) {
     // headers are case-insensitive
     props = props.map(prop => prop.toLowerCase());
-    if (props.indexOf('referer') !== -1 || props.indexOf('referrer') !== -1) {
-      if (props.indexOf('referer') === -1) props.push('referer');
-      if (props.indexOf('referrer') === -1) props.push('referrer');
+    if (props.includes('referer') || props.includes('referrer')) {
+      if (!props.includes('referer')) props.push('referer');
+      if (!props.includes('referrer')) props.push('referrer');
     }
   }
 
-  const notIncludedInProps = !isKeyString || props.indexOf(key) === -1;
+  const notIncludedInProps = !isKeyString || !props.includes(key);
 
   if (!options.isHeaders) {
     // check if it closely resembles a primary ID and return early if so
@@ -214,7 +214,7 @@ function maskString(key, val, props, options) {
   // Authorization: <type> <credentials>
   if (options.isHeaders && key === 'authorization')
     return `${val.split(' ')[0]} ${val
-      .substring(val.indexOf(' ') + 1)
+      .slice(val.indexOf(' ') + 1)
       .replace(/./g, '*')}`;
   return val.replace(/./g, '*');
 }
@@ -365,17 +365,8 @@ const parseRequest = (config = {}) => {
   // default to the user object
   let user = {};
 
-  if (ctx && isObject(ctx.state.user)) {
-    user =
-      typeof ctx.state.user.toObject === 'function'
-        ? ctx.state.user.toObject()
-        : clone(ctx.state.user);
-  } else if (req && isObject(req.user)) {
-    user =
-      typeof req.user.toObject === 'function'
-        ? req.user.toObject()
-        : clone(req.user);
-  }
+  if (ctx && isObject(ctx.state.user)) user = clone(ctx.state.user);
+  else if (req && isObject(req.user)) user = clone(req.user);
 
   const ip = ctx ? ctx.ip : req ? req.ip : null;
 
@@ -400,7 +391,7 @@ const parseRequest = (config = {}) => {
     // <https://github.com/niftylettuce/frisbee/issues/68>
     // <https://github.com/bitinn/node-fetch/blob/master/src/request.js#L75-L78>
     //
-    if (['GET', 'HEAD'].indexOf(method) === -1 && !isUndefined(originalBody))
+    if (!['GET', 'HEAD'].includes(method) && !isUndefined(originalBody))
       body = clone(
         maskBuffers || maskStreams
           ? maskSpecialTypes(originalBody, maskSpecialTypesOptions)
@@ -530,7 +521,9 @@ const parseRequest = (config = {}) => {
           result.response.timestamp = new Date(
             result.response.headers.date
           ).toISOString();
-      } catch (err) {}
+      } catch (err) {
+        debug(err);
+      }
 
       // add response.duration (parsed from response X-Response-Time header)
       try {
@@ -538,7 +531,9 @@ const parseRequest = (config = {}) => {
           const duration = ms(result.response.headers['x-response-time']);
           if (typeof duration === 'number') result.response.duration = duration;
         }
-      } catch (err) {}
+      } catch (err) {
+        debug(err);
+      }
     }
   }
 

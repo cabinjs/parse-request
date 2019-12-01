@@ -5,7 +5,8 @@
   "rules": {
     "compat/compat": "error",
     "no-func-assign": "off",
-    "no-empty": "off"
+    "no-empty": "off",
+    "no-unsafe-finally": "off"
   },
   "settings": {
     "polyfills": [

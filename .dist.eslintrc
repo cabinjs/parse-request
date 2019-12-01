@@ -25,7 +25,8 @@
       "Symbol.iterator",
       "Symbol.prototype",
       "Symbol.for",
-      "Object.assign"
+      "Object.assign",
+      "Array.from"
     ]
   }
 }
