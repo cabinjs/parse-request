@@ -365,8 +365,27 @@ const parseRequest = (config = {}) => {
   // default to the user object
   let user = {};
 
-  if (ctx && isObject(ctx.state.user)) user = clone(ctx.state.user);
-  else if (req && isObject(req.user)) user = clone(req.user);
+  let parsedUser;
+  if (ctx && isObject(ctx.state.user)) parsedUser = ctx.state.user;
+  else if (req && isObject(req.user)) parsedUser = req.user;
+
+  if (parsedUser) {
+    try {
+      user =
+        typeof parsedUser.toJSON === 'function'
+          ? parsedUser.toJSON()
+          : typeof parsedUser.toObject === 'function'
+          ? parsedUser.toObject()
+          : clone(parsedUser);
+    } catch (err) {
+      debug(err);
+      try {
+        user = JSON.parse(safeStringify(parsedUser));
+      } catch (err) {
+        debug(err);
+      }
+    }
+  }
 
   const ip = ctx ? ctx.ip : req ? req.ip : null;
 
