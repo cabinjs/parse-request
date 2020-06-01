@@ -15,7 +15,8 @@
       "Number.isFinite",
       "Object.getOwnPropertySymbols",
       "Symbol.for",
-      "Object.assign"
+      "Object.assign",
+      "Array.from"
     ]
   }
 }
