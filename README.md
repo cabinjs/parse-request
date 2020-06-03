@@ -62,6 +62,7 @@ This package exports a function that accepts an Object `options` argument:
   * `checkUUID` (Boolean) - defaults to `true`, and prevents [uuid][] values from being masked
   * `rfdc` (Object) - defaults to `{ proto: false, circles: false }` (you should not need to customize this, but if necessary refer to [rfdc][] documentation)
   * `parseBody` (Boolean) - defaults to `true`, if you set to `false` we will not parse nor clone the request `body` property (this overrides all other parsing settings related)
+  * `parseQuery` (Boolean) - defaults to `true`, if you set to `false` we will not parse nor clone the request `query` property (this overrides all other parsing settings related)
   * `parseFiles` (Boolean) - defaults to `true`, if you set to `false` we will not parse nor clone the request `file` nor `files` properties (this overrides all other parsing settings related)
 
 It automatically detects whether the request is from the Browser, Koa, or Express, and returns a parsed object with populated properties.

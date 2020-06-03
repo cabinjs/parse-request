@@ -15,6 +15,7 @@ const { Signale } = require('signale');
 const parseRequest = require('..');
 
 const disableBodyParsing = Symbol.for('parse-request.disableBodyParsing');
+const disableQueryParsing = Symbol.for('parse-request.disableQueryParsing');
 const disableFileParsing = Symbol.for('parse-request.disableFileParsing');
 const fixtures = path.join(__dirname, 'fixtures');
 const upload = multer();
@@ -46,6 +47,7 @@ test.beforeEach.cb(t => {
     ctx => {
       if (ctx.query._originalBody) ctx.request._originalBody = true;
       if (ctx.query.disableBodyParsing) ctx.req[disableBodyParsing] = true;
+      if (ctx.query.disableQueryParsing) ctx.req[disableQueryParsing] = true;
       if (ctx.query.disableFileParsing) ctx.req[disableFileParsing] = true;
       const obj = parseRequest({ ctx });
       ctx.logger.info('visited home page');
@@ -163,6 +165,38 @@ test.cb('koa with file parsing disabled', t => {
       t.is(err, null);
       t.true(typeof res.body.request.timestamp === 'string');
       t.true(typeof res.body.request.files === 'undefined');
+      t.end();
+    });
+});
+
+test.cb('koa with query string parsing', t => {
+  const request = supertest(t.context.server);
+  request
+    .post('/?foo=bar&beep=boop&code=test')
+    .auth('user', 'password')
+    .set('Accept', 'application/json')
+    .set('Cookie', ['foo=bar;beep=boop'])
+    .end((err, res) => {
+      t.is(err, null);
+      const { query } = res.body.request;
+      t.is(query.foo, 'bar');
+      t.is(query.code, '****');
+      t.end();
+    });
+});
+
+test.cb('koa without query string parsing', t => {
+  const request = supertest(t.context.server);
+  request
+    .post('/?disableQueryParsing=true&foo=bar&beep=boop&code=test')
+    .auth('user', 'password')
+    .set('Accept', 'application/json')
+    .set('Cookie', ['foo=bar;beep=boop'])
+    .end((err, res) => {
+      t.is(err, null);
+      const { query } = res.body.request;
+      t.is(query.foo, 'bar');
+      t.is(query.code, 'test');
       t.end();
     });
 });

@@ -12,6 +12,7 @@ const isStream = require('is-stream');
 const isUUID = require('is-uuid');
 const ms = require('ms');
 const noCase = require('no-case');
+const querystring = require('qs');
 const rfdc = require('rfdc');
 const safeStringify = require('fast-safe-stringify');
 const sensitiveFields = require('sensitive-fields');
@@ -21,6 +22,9 @@ const startTime = Symbol.for('request-received.startTime');
 const pinoHttpStartTime = Symbol.for('pino-http.startTime');
 
 const disableBodyParsingSymbol = Symbol.for('parse-request.disableBodyParsing');
+const disableQueryParsingSymbol = Symbol.for(
+  'parse-request.disableQueryParsing'
+);
 const disableFileParsingSymbol = Symbol.for('parse-request.disableFileParsing');
 
 const hashMapIds = {
@@ -283,6 +287,7 @@ const parseRequest = (config = {}) => {
         circles: false
       },
       parseBody: true,
+      parseQuery: true,
       parseFiles: true
     },
     config
@@ -305,6 +310,7 @@ const parseRequest = (config = {}) => {
     checkObjectId,
     checkUUID,
     parseBody,
+    parseQuery,
     parseFiles
   } = config;
 
@@ -436,11 +442,16 @@ const parseRequest = (config = {}) => {
 
   if (ctx || req) result.request = {};
   if (method) result.request.method = method;
-  if (query) result.request.query = query;
   if (headers) result.request.headers = headers;
   if (cookies) result.request.cookies = cookies;
   if (absoluteUrl) result.request.url = absoluteUrl;
   if (user) result.user = user;
+
+  if (query) {
+    if (parseQuery && !nodeReq[disableQueryParsingSymbol])
+      query = maskProps(querystring.parse(query), sanitizeFields);
+    result.request.query = query;
+  }
 
   if (originalBody && parseBody && body && !nodeReq[disableBodyParsingSymbol])
     result.request.body = body;
