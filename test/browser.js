@@ -20,7 +20,6 @@ const dom = new JSDOM(``, {
   runScripts: 'dangerously',
   virtualConsole
 });
-console.log(dom.window);
 
 dom.runVMScript(script);
 
