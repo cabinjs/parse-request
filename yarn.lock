@@ -1793,6 +1793,11 @@ brorand@^1.0.1:
   resolved "https://registry.yarnpkg.com/brorand/-/brorand-1.1.0.tgz#12c25efe40a45e3c323eb8675a0a0ce57b22371f"
   integrity sha1-EsJe/kCkXjwyPrhnWgoM5XsiNx8=
 
+browser-hrtime@^1.1.6:
+  version "1.1.6"
+  resolved "https://registry.yarnpkg.com/browser-hrtime/-/browser-hrtime-1.1.6.tgz#2ba08be0958462191610c7083419b7ae269e1ad9"
+  integrity sha512-d3bsYOPD2mc0Yo647ydma2Ep9K009P3Y5yen8ub+beXVBHSXbb/YHlIi9WJnQoutN5+AlT6vK+c60FbsbrgKgQ==
+
 browser-pack-flat@^3.0.9:
   version "3.4.2"
   resolved "https://registry.yarnpkg.com/browser-pack-flat/-/browser-pack-flat-3.4.2.tgz#aa3bee87ad1aab8f7de34d4704610a5981c6cf24"
