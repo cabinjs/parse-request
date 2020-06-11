@@ -26,7 +26,8 @@
       "Symbol.prototype",
       "Symbol.for",
       "Object.assign",
-      "Array.from"
+      "Array.from",
+      "performance.now"
     ]
   }
 }
