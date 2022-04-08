@@ -31,7 +31,7 @@
     "convert-hrtime": "^3.0.0",
     "cookie": "^0.4.1",
     "credit-card-type": "^8.3.0",
-    "debug": "^4.1.1",
+    "debug": "^4.3.4",
     "fast-safe-stringify": "^2.0.7",
     "http-headers": "^3.0.2",
     "is-array-buffer": "^1.0.1",
