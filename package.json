@@ -43,7 +43,7 @@
     "qs": "^6.9.4",
     "rfdc": "^1.1.4",
     "sensitive-fields": "^0.0.9",
-    "url-parse": "^1.4.7"
+    "url-parse": "^1.5.10"
   },
   "devDependencies": {
     "@babel/cli": "^7.10.1",
