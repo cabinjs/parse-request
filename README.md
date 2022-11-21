@@ -1,7 +1,6 @@
 # parse-request
 
-[![build status](https://img.shields.io/travis/cabinjs/parse-request.svg)](https://travis-ci.org/cabinjs/parse-request)
-[![code coverage](https://img.shields.io/codecov/c/github/cabinjs/parse-request.svg)](https://codecov.io/gh/cabinjs/parse-request)
+[![build status](https://github.com/cabinjs/parse-request/actions/workflows/ci.yml/badge.svg)](https://github.com/cabinjs/parse-request/actions/workflows/ci.yml)
 [![code style](https://img.shields.io/badge/code_style-XO-5ed9c7.svg)](https://github.com/sindresorhus/xo)
 [![styled with prettier](https://img.shields.io/badge/styled_with-prettier-ff69b4.svg)](https://github.com/prettier/prettier)
 [![made with lass](https://img.shields.io/badge/made_with-lass-95CC28.svg)](https://lass.js.org)
@@ -31,12 +30,6 @@
 
 ```sh
 npm install parse-request
-```
-
-[yarn][]:
-
-```sh
-yarn add parse-request
 ```
 
 
@@ -129,7 +122,7 @@ Here's an example object parsed:
     "node": "v10.15.3",
     "hash": "f99bb8f28be5c6dc76bed76f6dd8984accc5c5fa",
     "environment": "test",
-    "hostname": "jacks-MacBook-Pro.local",
+    "hostname": "users-MacBook-Pro.local",
     "pid": 22165
   }
 }
@@ -188,7 +181,7 @@ We highly recommend to simply use [Cabin][] as this package is built-in!
 The example below uses [xhook][] which is used to intercept HTTP requests made in the browser.
 
 ```html
-<script src="https://polyfill.io/v3/polyfill.min.js?features=es6,Number.isFinite,Object.getOwnPropertySymbols,Symbol.iterator,Symbol.prototype,Symbol.for,Object.assign,Array.from"></script>
+<script src="https://polyfill.io/v3/polyfill.min.js?features=performance,WeakRef"></script>
 <script src="https://unpkg.com/xhook"></script>
 <script src="https://unpkg.com/parse-request"></script>
 <script type="text/javascript">
@@ -207,16 +200,11 @@ The example below uses [xhook][] which is used to intercept HTTP requests made i
 We recommend using <https://polyfill.io> (specifically with the bundle mentioned in [VanillaJS](#vanillajs) above):
 
 ```html
-<script src="https://polyfill.io/v3/polyfill.min.js?features=es6,Number.isFinite,Object.getOwnPropertySymbols,Symbol.iterator,Symbol.prototype,Symbol.for,Object.assign,Array.from"></script>
+<script src="https://polyfill.io/v3/polyfill.min.js?features=performance,WeakRef"></script>
 ```
 
-* Number.isFinite() is not supported in IE 10
-* Object.getOwnPropertySymbols() is not supported in IE 10
-* Symbol.iterator() is not supported in IE 10
-* Symbol.prototype() is not supported in IE 10
-* Symbol.for() is not supported in IE 10
-* Object.assign() is not supported in IE 10
-* Array.from() is not supported in IE 10
+* performance.now() is not supported in op\_mini all
+* WeakRef is not supported in Opera 91
 
 ### Koa
 
@@ -319,11 +307,9 @@ app.get('/', (ctx, next) => {
 [MIT](LICENSE) © [Nick Baugh](http://niftylettuce.com/)
 
 
-## 
+##
 
 [npm]: https://www.npmjs.com/
-
-[yarn]: https://yarnpkg.com/
 
 [passport]: http://www.passportjs.org/
 

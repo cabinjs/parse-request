@@ -1,22 +1,14 @@
 {
   "extends": ["eslint:recommended", "plugin:node/recommended"],
-  "env": { "browser": true" },
+  "env": { "browser": true },
   "plugins": ["compat"],
   "rules": {
     "compat/compat": "error",
     "no-func-assign": "off",
-    "no-empty": "off",
     "no-unsafe-finally": "off"
   },
   "settings": {
     "polyfills": [
-      "Symbol.iterator",
-      "Symbol.prototype",
-      "Number.isFinite",
-      "Object.getOwnPropertySymbols",
-      "Symbol.for",
-      "Object.assign",
-      "Array.from"
     ]
   }
 }

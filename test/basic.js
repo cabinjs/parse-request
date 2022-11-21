@@ -1,4 +1,5 @@
-const { PassThrough } = require('stream');
+const { Buffer } = require('node:buffer');
+const { PassThrough } = require('node:stream');
 const test = require('ava');
 
 const ObjectId = require('bson-objectid');
@@ -8,7 +9,7 @@ const parseRequest = require('..');
 const startTime = Symbol.for('request-received.startTime');
 const pinoHttpStartTime = Symbol.for('pino-http.startTime');
 
-test('hides passwords', t => {
+test('hides passwords', (t) => {
   const obj = parseRequest({
     req: {
       method: 'POST',
@@ -49,7 +50,7 @@ test('hides passwords', t => {
   t.is(body.arr[0].foo.beep[0].password, '***');
 });
 
-test('parses http-version', t => {
+test('parses http-version', (t) => {
   const obj = parseRequest({
     req: {
       httpVersion: '2.0'
@@ -58,7 +59,7 @@ test('parses http-version', t => {
   t.is(obj.request.http_version, '2.0');
 });
 
-test('parses http-version major and minor', t => {
+test('parses http-version major and minor', (t) => {
   const obj = parseRequest({
     req: {
       httpVersionMajor: '1',
@@ -68,7 +69,7 @@ test('parses http-version major and minor', t => {
   t.is(obj.request.http_version, '1.1');
 });
 
-test('parses req.id', t => {
+test('parses req.id', (t) => {
   const obj = parseRequest({
     req: {
       id: 'foobar'
@@ -77,7 +78,7 @@ test('parses req.id', t => {
   t.is(obj.request.id, 'foobar');
 });
 
-test('created an object id, timestamp, and duration', t => {
+test('created an object id, timestamp, and duration', (t) => {
   const obj = parseRequest();
   t.true(typeof obj.id === 'string');
   t.true(ObjectId.isValid(obj.id));
@@ -85,7 +86,7 @@ test('created an object id, timestamp, and duration', t => {
   t.true(typeof obj.duration === 'number');
 });
 
-test('parses responseHeaders as a string', t => {
+test('parses responseHeaders as a string', (t) => {
   const obj = parseRequest({
     responseHeaders: [
       'HTTP/1.1 200 OK',
@@ -102,7 +103,7 @@ test('parses responseHeaders as a string', t => {
   t.true(typeof obj.response.headers.date === 'string');
 });
 
-test('parses responseHeaders as a string w/o HTTP line', t => {
+test('parses responseHeaders as a string w/o HTTP line', (t) => {
   const obj = parseRequest({
     responseHeaders: [
       'Date: Tue, 10 Jun 2014 07:19:27 GMT',
@@ -116,7 +117,7 @@ test('parses responseHeaders as a string w/o HTTP line', t => {
   t.true(typeof obj.response.headers.date === 'string');
 });
 
-test('parses start time and start date as date', t => {
+test('parses start time and start date as date', (t) => {
   const req = {};
   req[startTime] = new Date();
   const obj = parseRequest({
@@ -132,7 +133,7 @@ test('parses start time and start date as date', t => {
   t.true(typeof obj.response.duration === 'number');
 });
 
-test('works with morgan req._startTime date', t => {
+test('works with morgan req._startTime date', (t) => {
   const req = {};
   req._startTime = new Date();
   const obj = parseRequest({
@@ -148,7 +149,7 @@ test('works with morgan req._startTime date', t => {
   t.true(typeof obj.response.duration === 'number');
 });
 
-test('works with morgan req._startTime number', t => {
+test('works with morgan req._startTime number', (t) => {
   const req = {};
   req._startTime = Date.now();
   const obj = parseRequest({
@@ -164,7 +165,7 @@ test('works with morgan req._startTime number', t => {
   t.true(typeof obj.response.duration === 'number');
 });
 
-test('parses start time and start date as number', t => {
+test('parses start time and start date as number', (t) => {
   const req = {};
   req[startTime] = Date.now();
   const obj = parseRequest({
@@ -180,7 +181,7 @@ test('parses start time and start date as number', t => {
   t.true(typeof obj.response.duration === 'number');
 });
 
-test('parses pino start time and start date', t => {
+test('parses pino start time and start date', (t) => {
   const req = {};
   req[pinoHttpStartTime] = Date.now();
   const obj = parseRequest({
@@ -196,7 +197,7 @@ test('parses pino start time and start date', t => {
   t.true(typeof obj.response.duration === 'number');
 });
 
-test('uses req.url', t => {
+test('uses req.url', (t) => {
   const obj = parseRequest({
     req: {
       method: 'POST',
@@ -209,7 +210,7 @@ test('uses req.url', t => {
   t.deepEqual(body.foo, { type: 'Stream' });
 });
 
-test('masks referrer if referer is set', t => {
+test('masks referrer if referer is set', (t) => {
   const obj = parseRequest({
     req: {
       method: 'GET',
@@ -222,7 +223,7 @@ test('masks referrer if referer is set', t => {
   t.is(obj.request.headers.referrer, '***');
 });
 
-test('masks referer if referrer is set', t => {
+test('masks referer if referrer is set', (t) => {
   const obj = parseRequest({
     req: {
       method: 'GET',
@@ -235,7 +236,7 @@ test('masks referer if referrer is set', t => {
   t.is(obj.request.headers.referer, '***');
 });
 
-test('does not parse body', t => {
+test('does not parse body', (t) => {
   const body = 'test';
   const obj = parseRequest({
     req: {
@@ -247,7 +248,7 @@ test('does not parse body', t => {
   t.true(typeof obj.request.body === 'undefined');
 });
 
-test('does not parse files', t => {
+test('does not parse files', (t) => {
   const obj = parseRequest({
     req: {
       method: 'POST',
@@ -273,7 +274,7 @@ test('does not parse files', t => {
   t.true(typeof obj.request.files === 'undefined');
 });
 
-test('hides authentication header', t => {
+test('hides authentication header', (t) => {
   let obj = parseRequest({
     req: {
       method: 'GET',
@@ -295,7 +296,7 @@ test('hides authentication header', t => {
   t.is(obj.request.headers.authorization, 'Bearer ********************');
 });
 
-test('works with multer req.file and req.files', t => {
+test('works with multer req.file and req.files', (t) => {
   const obj = parseRequest({
     req: {
       method: 'POST',
@@ -329,7 +330,7 @@ test('works with multer req.file and req.files', t => {
   ]);
 });
 
-test('does not clone streams', t => {
+test('does not clone streams', (t) => {
   const obj = parseRequest({
     req: {
       method: 'POST',
@@ -342,7 +343,7 @@ test('does not clone streams', t => {
   t.deepEqual(body.foo, { type: 'Stream' });
 });
 
-test('does not clone buffers', t => {
+test('does not clone buffers', (t) => {
   const obj = parseRequest({
     req: {
       method: 'POST',
@@ -392,7 +393,7 @@ test('does not clone buffers', t => {
   });
 });
 
-test('does not mask uuid', t => {
+test('does not mask uuid', (t) => {
   const obj = parseRequest({
     req: {
       method: 'POST',
@@ -405,7 +406,7 @@ test('does not mask uuid', t => {
   t.is(body.foo, 'c51c80c2-66a1-442a-91e2-4f55b4256a72');
 });
 
-test('does not mask cuid', t => {
+test('does not mask cuid', (t) => {
   const obj = parseRequest({
     req: {
       method: 'POST',
@@ -422,7 +423,7 @@ test('does not mask cuid', t => {
   });
 });
 
-test('masks a string passed as body', t => {
+test('masks a string passed as body', (t) => {
   const obj = parseRequest({
     req: {
       method: 'POST',
@@ -432,7 +433,7 @@ test('masks a string passed as body', t => {
   t.is(obj.request.body, '****-****-****-****');
 });
 
-test('masks an array passed as body', t => {
+test('masks an array passed as body', (t) => {
   const obj = parseRequest({
     req: {
       method: 'POST',
@@ -455,7 +456,7 @@ test('masks an array passed as body', t => {
   t.is(body[1][0][0]['card[number]'], '****************');
 });
 
-test('does not mask specific objectid', t => {
+test('does not mask specific objectid', (t) => {
   const obj = parseRequest({
     req: {
       method: 'POST',
@@ -468,7 +469,7 @@ test('does not mask specific objectid', t => {
   t.is(body.product, '5abbbacf04e4872d3ae344c1');
 });
 
-test('does not mask MongoDB ObjectId', t => {
+test('does not mask MongoDB ObjectId', (t) => {
   const obj = parseRequest({
     req: {
       method: 'POST',
@@ -483,7 +484,7 @@ test('does not mask MongoDB ObjectId', t => {
   t.is(body.baz, '542f9cabed89afee4aaf2e61');
 });
 
-test('does not mask properties closely resembling a primary ID', t => {
+test('does not mask properties closely resembling a primary ID', (t) => {
   const obj = parseRequest({
     req: {
       method: 'POST',
@@ -514,7 +515,7 @@ test('does not mask properties closely resembling a primary ID', t => {
   });
 });
 
-test('hides credit card number', t => {
+test('hides credit card number', (t) => {
   const obj = parseRequest({
     req: {
       method: 'POST',
@@ -546,7 +547,7 @@ test('hides credit card number', t => {
   t.is(body.foo[2], '****-****x*********');
 });
 
-test('GET/HEAD empty String `request.body`', t => {
+test('GET/HEAD empty String `request.body`', (t) => {
   t.is(
     parseRequest({
       req: {
@@ -567,7 +568,7 @@ test('GET/HEAD empty String `request.body`', t => {
   );
 });
 
-test('POST with Object is parsed to `request.body`', t => {
+test('POST with Object is parsed to `request.body`', (t) => {
   t.is(
     parseRequest({
       req: {
@@ -579,7 +580,7 @@ test('POST with Object is parsed to `request.body`', t => {
   );
 });
 
-test('POST with Number is parsed to `request.body`', t => {
+test('POST with Number is parsed to `request.body`', (t) => {
   t.is(
     parseRequest({
       req: {
@@ -591,7 +592,7 @@ test('POST with Number is parsed to `request.body`', t => {
   );
 });
 
-test('POST with String is parsed to `request.body`', t => {
+test('POST with String is parsed to `request.body`', (t) => {
   t.is(
     parseRequest({
       req: {
@@ -603,7 +604,7 @@ test('POST with String is parsed to `request.body`', t => {
   );
 });
 
-test('parses user object', t => {
+test('parses user object', (t) => {
   t.is(
     parseRequest({
       req: {
@@ -617,7 +618,7 @@ test('parses user object', t => {
   );
 });
 
-test('parses ip address', t => {
+test('parses ip address', (t) => {
   t.is(
     parseRequest({
       req: {

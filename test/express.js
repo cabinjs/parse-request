@@ -1,4 +1,4 @@
-const path = require('path');
+const path = require('node:path');
 
 const test = require('ava');
 const express = require('express');
@@ -17,7 +17,7 @@ const disableFileParsing = Symbol.for('parse-request.disableFileParsing');
 const fixtures = path.join(__dirname, 'fixtures');
 const upload = multer();
 
-test.beforeEach.cb(t => {
+test.beforeEach.cb((t) => {
   const app = express();
   const cabin = new Cabin({
     axe: {
@@ -55,7 +55,7 @@ test.beforeEach.cb(t => {
   });
 });
 
-test.cb('express', t => {
+test.cb('express', (t) => {
   const request = supertest(t.context.server);
   request
     .post('/?foo=bar&beep=boop')
@@ -88,7 +88,7 @@ test.cb('express', t => {
     });
 });
 
-test.cb('express with req._originalBody set', t => {
+test.cb('express with req._originalBody set', (t) => {
   const request = supertest(t.context.server);
   request
     .post('/?_originalBody=true')
@@ -113,7 +113,7 @@ test.cb('express with req._originalBody set', t => {
     });
 });
 
-test.cb('express with body parsing disabled', t => {
+test.cb('express with body parsing disabled', (t) => {
   const request = supertest(t.context.server);
   request
     .post('/?disableBodyParsing=true')
@@ -138,7 +138,7 @@ test.cb('express with body parsing disabled', t => {
     });
 });
 
-test.cb('express with file parsing disabled', t => {
+test.cb('express with file parsing disabled', (t) => {
   const request = supertest(t.context.server);
   request
     .post('/?disableFileParsing=true')

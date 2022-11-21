@@ -44,6 +44,7 @@ function maskArray(obj, options) {
 }
 
 function maskSpecialTypes(obj, options) {
+  // eslint-disable-next-line prefer-object-spread
   options = Object.assign(
     {
       maskBuffers: true,
@@ -52,6 +53,7 @@ function maskSpecialTypes(obj, options) {
     },
     options
   );
+
   if (typeof obj !== 'object') return obj;
 
   // we need to return an array if passed an array
@@ -111,13 +113,13 @@ function maskSpecialTypes(obj, options) {
 }
 
 function pick(object, keys) {
-  return keys.reduce((obj, key) => {
-    if (object && Object.prototype.hasOwnProperty.call(object, key)) {
+  const obj = {};
+  for (const key of keys) {
+    if (Object.prototype.hasOwnProperty.call(object, key))
       obj[key] = object[key];
-    }
+  }
 
-    return obj;
-  }, {});
+  return obj;
 }
 
 function isNull(val) {
@@ -178,7 +180,7 @@ function maskString(key, val, props, options) {
 
   if (options.isHeaders) {
     // headers are case-insensitive
-    props = props.map(prop => prop.toLowerCase());
+    props = props.map((prop) => prop.toLowerCase());
     if (props.includes('referer') || props.includes('referrer')) {
       if (!props.includes('referer')) props.push('referer');
       if (!props.includes('referrer')) props.push('referrer');
@@ -235,6 +237,7 @@ function headersToLowerCase(headers) {
 }
 
 function maskProps(obj, props, options) {
+  // eslint-disable-next-line prefer-object-spread
   options = Object.assign(
     {
       maskCreditCards: true,
@@ -266,6 +269,7 @@ const parseRequest = (config = {}) => {
   const start = hrtime();
   const id = new ObjectId();
 
+  // eslint-disable-next-line prefer-object-spread
   config = Object.assign(
     {
       req: false,
@@ -320,7 +324,7 @@ const parseRequest = (config = {}) => {
       'You must either use `req` (Express/Connect) or `ctx` (Koa) option, but not both'
     );
 
-  const nodeReq = ctx ? ctx.req : req ? req : {};
+  const nodeReq = ctx ? ctx.req : req || {};
 
   const maskPropsOptions = {
     maskCreditCards,
@@ -413,7 +417,7 @@ const parseRequest = (config = {}) => {
   if (originalBody && parseBody && !nodeReq[disableBodyParsingSymbol]) {
     //
     // recursively search through body and filter out passwords from it
-    // <https://github.com/niftylettuce/frisbee/issues/68>
+    // <https://github.com/ladjs/frisbee/issues/68>
     // <https://github.com/bitinn/node-fetch/blob/master/src/request.js#L75-L78>
     //
     if (!['GET', 'HEAD'].includes(method) && !isUndefined(originalBody))

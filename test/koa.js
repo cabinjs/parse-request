@@ -1,4 +1,4 @@
-const path = require('path');
+const path = require('node:path');
 
 const test = require('ava');
 const Koa = require('koa');
@@ -20,7 +20,7 @@ const disableFileParsing = Symbol.for('parse-request.disableFileParsing');
 const fixtures = path.join(__dirname, 'fixtures');
 const upload = multer();
 
-test.beforeEach.cb(t => {
+test.beforeEach.cb((t) => {
   const app = new Koa();
   const cabin = new Cabin({
     axe: {
@@ -44,7 +44,7 @@ test.beforeEach.cb(t => {
         maxCount: 2
       }
     ]),
-    ctx => {
+    (ctx) => {
       if (ctx.query._originalBody) ctx.request._originalBody = true;
       if (ctx.query.disableBodyParsing) ctx.req[disableBodyParsing] = true;
       if (ctx.query.disableQueryParsing) ctx.req[disableQueryParsing] = true;
@@ -61,7 +61,7 @@ test.beforeEach.cb(t => {
   });
 });
 
-test.cb('koa', t => {
+test.cb('koa', (t) => {
   const request = supertest(t.context.server);
   request
     .post('/?foo=bar&beep=boop')
@@ -94,7 +94,7 @@ test.cb('koa', t => {
     });
 });
 
-test.cb('koa with req._originalBody set', t => {
+test.cb('koa with req._originalBody set', (t) => {
   const request = supertest(t.context.server);
   request
     .post('/?_originalBody=true')
@@ -119,7 +119,7 @@ test.cb('koa with req._originalBody set', t => {
     });
 });
 
-test.cb('koa with body parsing disabled', t => {
+test.cb('koa with body parsing disabled', (t) => {
   const request = supertest(t.context.server);
   request
     .post('/?disableBodyParsing=true')
@@ -144,7 +144,7 @@ test.cb('koa with body parsing disabled', t => {
     });
 });
 
-test.cb('koa with file parsing disabled', t => {
+test.cb('koa with file parsing disabled', (t) => {
   const request = supertest(t.context.server);
   request
     .post('/?disableFileParsing=true')
@@ -169,7 +169,7 @@ test.cb('koa with file parsing disabled', t => {
     });
 });
 
-test.cb('koa with query string parsing', t => {
+test.cb('koa with query string parsing', (t) => {
   const request = supertest(t.context.server);
   request
     .post('/?foo=bar&beep=boop&code=test')
@@ -185,7 +185,7 @@ test.cb('koa with query string parsing', t => {
     });
 });
 
-test.cb('koa without query string parsing', t => {
+test.cb('koa without query string parsing', (t) => {
   const request = supertest(t.context.server);
   request
     .post('/?disableQueryParsing=true&foo=bar&beep=boop&code=test')

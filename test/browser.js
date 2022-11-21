@@ -1,6 +1,6 @@
-const path = require('path');
-const { readFileSync } = require('fs');
-const { Script } = require('vm');
+const path = require('node:path');
+const { readFileSync } = require('node:fs');
+const { Script } = require('node:vm');
 const test = require('ava');
 const { JSDOM, VirtualConsole } = require('jsdom');
 
@@ -23,7 +23,7 @@ const dom = new JSDOM(``, {
 
 dom.runVMScript(script);
 
-test('should parse a request', t => {
+test('should parse a request', (t) => {
   const obj = dom.window.parseRequest({
     req: {
       method: 'POST',
@@ -33,7 +33,7 @@ test('should parse a request', t => {
   t.is(obj.request.url, undefined);
 });
 
-test('should parse request and not override', t => {
+test('should parse request and not override', (t) => {
   const obj = dom.window.parseRequest({
     req: {
       method: 'POST',
@@ -53,7 +53,7 @@ test('should parse request and not override', t => {
   });
 });
 
-test('should not override headers.referer', t => {
+test('should not override headers.referer', (t) => {
   const obj = dom.window.parseRequest({
     req: {
       method: 'GET',
@@ -65,7 +65,7 @@ test('should not override headers.referer', t => {
   t.is(obj.request.headers.referer, 'foo');
 });
 
-test('should not override headers.referrer', t => {
+test('should not override headers.referrer', (t) => {
   const obj = dom.window.parseRequest({
     req: {
       method: 'GET',
@@ -77,7 +77,7 @@ test('should not override headers.referrer', t => {
   t.is(obj.request.headers.referrer, 'foo');
 });
 
-test('should not override headers.cookie', t => {
+test('should not override headers.cookie', (t) => {
   const obj = dom.window.parseRequest({
     req: {
       method: 'GEt',
