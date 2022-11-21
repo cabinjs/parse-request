@@ -3,16 +3,6 @@
   "description": "Parse requests in the Browser and Node (with added support for multer and passport). Made for Cabin.",
   "version": "4.0.0",
   "author": "Nick Baugh <niftylettuce@gmail.com> (http://niftylettuce.com/)",
-  "ava": {
-    "files": [
-      "test/*.js",
-      "test/**/*.js",
-      "!test/helpers/*.js",
-      "!test/helpers/**/*.js",
-      "!test/fixtures/*.js",
-      "!test/fixtures/**/*.js"
-    ]
-  },
   "bugs": {
     "url": "https://github.com/cabinjs/parse-request/issues",
     "email": "niftylettuce@gmail.com"
