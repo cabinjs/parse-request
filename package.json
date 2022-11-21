@@ -4,7 +4,14 @@
   "version": "4.0.0",
   "author": "Nick Baugh <niftylettuce@gmail.com> (http://niftylettuce.com/)",
   "ava": {
-    "timeout": "30s"
+    "files": [
+      "test/*.js",
+      "test/**/*.js",
+      "!test/helpers/*.js",
+      "!test/helpers/**/*.js",
+      "!test/fixtures/*.js",
+      "!test/fixtures/**/*.js"
+    ]
   },
   "bugs": {
     "url": "https://github.com/cabinjs/parse-request/issues",
