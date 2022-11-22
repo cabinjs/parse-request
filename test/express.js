@@ -2,13 +2,14 @@ const path = require('node:path');
 
 const test = require('ava');
 const express = require('express');
-const multer = require('multer');
+const multer = require('fix-esm').require('multer').default;
 const requestId = require('express-request-id');
 const requestReceived = require('request-received');
 const responseTime = require('response-time');
 const supertest = require('supertest');
 const Cabin = require('cabin');
 const { Signale } = require('signale');
+const getPort = require('get-port');
 
 const parseRequest = require('..');
 
@@ -17,7 +18,7 @@ const disableFileParsing = Symbol.for('parse-request.disableFileParsing');
 const fixtures = path.join(__dirname, 'fixtures');
 const upload = multer();
 
-test.beforeEach.cb((t) => {
+test.beforeEach(async (t) => {
   const app = express();
   const cabin = new Cabin({
     axe: {
@@ -49,15 +50,12 @@ test.beforeEach.cb((t) => {
       res.json(obj);
     }
   );
-  t.context.app = app;
-  t.context.server = app.listen(() => {
-    t.end();
-  });
+  const port = await getPort();
+  t.context.agent = supertest.agent(app.listen(port));
 });
 
-test.cb('express', (t) => {
-  const request = supertest(t.context.server);
-  request
+test('express', async (t) => {
+  const res = await t.context.agent
     .post('/?foo=bar&beep=boop')
     .auth('user', 'password')
     .set('Accept', 'application/json')
@@ -71,26 +69,21 @@ test.cb('express', (t) => {
     .attach('avatar', path.join(fixtures, 'avatar.png'))
     .attach('boop', path.join(fixtures, 'boop-1.txt'))
     .attach('boop', path.join(fixtures, 'boop-2.txt'))
-    .set('Cookie', ['foo=bar;beep=boop'])
-    .end((err, res) => {
-      t.is(err, null);
-      t.true(typeof res.body.request.timestamp === 'string');
-      t.true(typeof res.body.request.body === 'string');
-      const files = JSON.parse(res.body.request.files);
-      t.true(typeof files === 'object');
-      t.true(typeof files.avatar === 'object' && Array.isArray(files.avatar));
-      const body = JSON.parse(res.body.request.body);
-      t.is(body.name, 'nifty');
-      t.is(body.bank_account_number, '**********');
-      t.is(body.card.number, '****-****-****-****');
-      t.is(body.stripe_token, '***************');
-      t.end();
-    });
+    .set('Cookie', ['foo=bar;beep=boop']);
+  t.true(typeof res.body.request.timestamp === 'string');
+  t.true(typeof res.body.request.body === 'string');
+  const files = JSON.parse(res.body.request.files);
+  t.true(typeof files === 'object');
+  t.true(typeof files.avatar === 'object' && Array.isArray(files.avatar));
+  const body = JSON.parse(res.body.request.body);
+  t.is(body.name, 'nifty');
+  t.is(body.bank_account_number, '**********');
+  t.is(body.card.number, '****-****-****-****');
+  t.is(body.stripe_token, '***************');
 });
 
-test.cb('express with req._originalBody set', (t) => {
-  const request = supertest(t.context.server);
-  request
+test('express with req._originalBody set', async (t) => {
+  const res = await t.context.agent
     .post('/?_originalBody=true')
     .auth('user', 'password')
     .set('Accept', 'application/json')
@@ -104,18 +97,13 @@ test.cb('express with req._originalBody set', (t) => {
     .attach('avatar', path.join(fixtures, 'avatar.png'))
     .attach('boop', path.join(fixtures, 'boop-1.txt'))
     .attach('boop', path.join(fixtures, 'boop-2.txt'))
-    .set('Cookie', ['foo=bar;beep=boop'])
-    .end((err, res) => {
-      t.is(err, null);
-      t.true(typeof res.body.request.timestamp === 'string');
-      t.is(res.body.request.body, 'true');
-      t.end();
-    });
+    .set('Cookie', ['foo=bar;beep=boop']);
+  t.true(typeof res.body.request.timestamp === 'string');
+  t.is(res.body.request.body, 'true');
 });
 
-test.cb('express with body parsing disabled', (t) => {
-  const request = supertest(t.context.server);
-  request
+test('express with body parsing disabled', async (t) => {
+  const res = await t.context.agent
     .post('/?disableBodyParsing=true')
     .auth('user', 'password')
     .set('Accept', 'application/json')
@@ -129,18 +117,16 @@ test.cb('express with body parsing disabled', (t) => {
     .attach('avatar', path.join(fixtures, 'avatar.png'))
     .attach('boop', path.join(fixtures, 'boop-1.txt'))
     .attach('boop', path.join(fixtures, 'boop-2.txt'))
-    .set('Cookie', ['foo=bar;beep=boop'])
-    .end((err, res) => {
-      t.is(err, null);
-      t.true(typeof res.body.request.timestamp === 'string');
-      t.true(typeof res.body.request.body === 'undefined');
-      t.end();
-    });
+    .set('Cookie', ['foo=bar;beep=boop']);
+  console.log('res', res);
+  console.log('res.body', res.body);
+  console.log('res.body.request', res.body.request);
+  t.true(typeof res.body.request.timestamp === 'string');
+  t.true(typeof res.body.request.body === 'undefined');
 });
 
-test.cb('express with file parsing disabled', (t) => {
-  const request = supertest(t.context.server);
-  request
+test('express with file parsing disabled', async (t) => {
+  const res = await t.context.agent
     .post('/?disableFileParsing=true')
     .auth('user', 'password')
     .set('Accept', 'application/json')
@@ -154,11 +140,7 @@ test.cb('express with file parsing disabled', (t) => {
     .attach('avatar', path.join(fixtures, 'avatar.png'))
     .attach('boop', path.join(fixtures, 'boop-1.txt'))
     .attach('boop', path.join(fixtures, 'boop-2.txt'))
-    .set('Cookie', ['foo=bar;beep=boop'])
-    .end((err, res) => {
-      t.is(err, null);
-      t.true(typeof res.body.request.timestamp === 'string');
-      t.true(typeof res.body.request.files === 'undefined');
-      t.end();
-    });
+    .set('Cookie', ['foo=bar;beep=boop']);
+  t.true(typeof res.body.request.timestamp === 'string');
+  t.true(typeof res.body.request.files === 'undefined');
 });

@@ -11,6 +11,7 @@ const koaConnect = require('koa-connect');
 const supertest = require('supertest');
 const Cabin = require('cabin');
 const { Signale } = require('signale');
+const getPort = require('get-port');
 
 const parseRequest = require('..');
 
@@ -20,7 +21,7 @@ const disableFileParsing = Symbol.for('parse-request.disableFileParsing');
 const fixtures = path.join(__dirname, 'fixtures');
 const upload = multer();
 
-test.beforeEach.cb((t) => {
+test.beforeEach(async (t) => {
   const app = new Koa();
   const cabin = new Cabin({
     axe: {
@@ -56,14 +57,12 @@ test.beforeEach.cb((t) => {
   );
   app.use(router.routes());
   app.use(router.allowedMethods());
-  t.context.server = app.listen(() => {
-    t.end();
-  });
+  const port = await getPort();
+  t.context.agent = supertest.agent(app.listen(port));
 });
 
-test.cb('koa', (t) => {
-  const request = supertest(t.context.server);
-  request
+test('koa', async (t) => {
+  const res = await t.context.agent
     .post('/?foo=bar&beep=boop')
     .auth('user', 'password')
     .set('Accept', 'application/json')
@@ -77,26 +76,21 @@ test.cb('koa', (t) => {
     .attach('avatar', path.join(fixtures, 'avatar.png'))
     .attach('boop', path.join(fixtures, 'boop-1.txt'))
     .attach('boop', path.join(fixtures, 'boop-2.txt'))
-    .set('Cookie', ['foo=bar;beep=boop'])
-    .end((err, res) => {
-      t.is(err, null);
-      t.true(typeof res.body.request.timestamp === 'string');
-      t.true(typeof res.body.request.body === 'string');
-      const files = JSON.parse(res.body.request.files);
-      t.true(typeof files === 'object');
-      t.true(typeof files.avatar === 'object' && Array.isArray(files.avatar));
-      const body = JSON.parse(res.body.request.body);
-      t.is(body.name, 'nifty');
-      t.is(body.bank_account_number, '**********');
-      t.is(body.card.number, '****-****-****-****');
-      t.is(body.stripe_token, '***************');
-      t.end();
-    });
+    .set('Cookie', ['foo=bar;beep=boop']);
+  t.true(typeof res.body.request.timestamp === 'string');
+  t.true(typeof res.body.request.body === 'string');
+  const files = JSON.parse(res.body.request.files);
+  t.true(typeof files === 'object');
+  t.true(typeof files.avatar === 'object' && Array.isArray(files.avatar));
+  const body = JSON.parse(res.body.request.body);
+  t.is(body.name, 'nifty');
+  t.is(body.bank_account_number, '**********');
+  t.is(body.card.number, '****-****-****-****');
+  t.is(body.stripe_token, '***************');
 });
 
-test.cb('koa with req._originalBody set', (t) => {
-  const request = supertest(t.context.server);
-  request
+test('koa with req._originalBody set', async (t) => {
+  const res = await t.context.agent
     .post('/?_originalBody=true')
     .auth('user', 'password')
     .set('Accept', 'application/json')
@@ -110,18 +104,13 @@ test.cb('koa with req._originalBody set', (t) => {
     .attach('avatar', path.join(fixtures, 'avatar.png'))
     .attach('boop', path.join(fixtures, 'boop-1.txt'))
     .attach('boop', path.join(fixtures, 'boop-2.txt'))
-    .set('Cookie', ['foo=bar;beep=boop'])
-    .end((err, res) => {
-      t.is(err, null);
-      t.true(typeof res.body.request.timestamp === 'string');
-      t.is(res.body.request.body, 'true');
-      t.end();
-    });
+    .set('Cookie', ['foo=bar;beep=boop']);
+  t.true(typeof res.body.request.timestamp === 'string');
+  t.is(res.body.request.body, 'true');
 });
 
-test.cb('koa with body parsing disabled', (t) => {
-  const request = supertest(t.context.server);
-  request
+test('koa with body parsing disabled', async (t) => {
+  const res = await t.context.agent
     .post('/?disableBodyParsing=true')
     .auth('user', 'password')
     .set('Accept', 'application/json')
@@ -135,18 +124,13 @@ test.cb('koa with body parsing disabled', (t) => {
     .attach('avatar', path.join(fixtures, 'avatar.png'))
     .attach('boop', path.join(fixtures, 'boop-1.txt'))
     .attach('boop', path.join(fixtures, 'boop-2.txt'))
-    .set('Cookie', ['foo=bar;beep=boop'])
-    .end((err, res) => {
-      t.is(err, null);
-      t.true(typeof res.body.request.timestamp === 'string');
-      t.true(typeof res.body.request.body === 'undefined');
-      t.end();
-    });
+    .set('Cookie', ['foo=bar;beep=boop']);
+  t.true(typeof res.body.request.timestamp === 'string');
+  t.true(typeof res.body.request.body === 'undefined');
 });
 
-test.cb('koa with file parsing disabled', (t) => {
-  const request = supertest(t.context.server);
-  request
+test('koa with file parsing disabled', async (t) => {
+  const res = await t.context.agent
     .post('/?disableFileParsing=true')
     .auth('user', 'password')
     .set('Accept', 'application/json')
@@ -160,43 +144,29 @@ test.cb('koa with file parsing disabled', (t) => {
     .attach('avatar', path.join(fixtures, 'avatar.png'))
     .attach('boop', path.join(fixtures, 'boop-1.txt'))
     .attach('boop', path.join(fixtures, 'boop-2.txt'))
-    .set('Cookie', ['foo=bar;beep=boop'])
-    .end((err, res) => {
-      t.is(err, null);
-      t.true(typeof res.body.request.timestamp === 'string');
-      t.true(typeof res.body.request.files === 'undefined');
-      t.end();
-    });
+    .set('Cookie', ['foo=bar;beep=boop']);
+  t.true(typeof res.body.request.timestamp === 'string');
+  t.true(typeof res.body.request.files === 'undefined');
 });
 
-test.cb('koa with query string parsing', (t) => {
-  const request = supertest(t.context.server);
-  request
+test('koa with query string parsing', async (t) => {
+  const res = await t.context.agent
     .post('/?foo=bar&beep=boop&code=test')
     .auth('user', 'password')
     .set('Accept', 'application/json')
-    .set('Cookie', ['foo=bar;beep=boop'])
-    .end((err, res) => {
-      t.is(err, null);
-      const { query } = res.body.request;
-      t.is(query.foo, 'bar');
-      t.is(query.code, '****');
-      t.end();
-    });
+    .set('Cookie', ['foo=bar;beep=boop']);
+  const { query } = res.body.request;
+  t.is(query.foo, 'bar');
+  t.is(query.code, '****');
 });
 
-test.cb('koa without query string parsing', (t) => {
-  const request = supertest(t.context.server);
-  request
+test('koa without query string parsing', async (t) => {
+  const res = await t.context.agent
     .post('/?disableQueryParsing=true&foo=bar&beep=boop&code=test')
     .auth('user', 'password')
     .set('Accept', 'application/json')
-    .set('Cookie', ['foo=bar;beep=boop'])
-    .end((err, res) => {
-      t.is(err, null);
-      const { query } = res.body.request;
-      t.is(query.foo, 'bar');
-      t.is(query.code, 'test');
-      t.end();
-    });
+    .set('Cookie', ['foo=bar;beep=boop']);
+  const { query } = res.body.request;
+  t.is(query.foo, 'bar');
+  t.is(query.code, 'test');
 });
