@@ -176,8 +176,6 @@ We highly recommend to simply use [Cabin][] as this package is built-in!
 
 ### VanillaJS
 
-**The browser-ready bundle is only 17 KB (minified and gzipped)**.
-
 The example below uses [xhook][] which is used to intercept HTTP requests made in the browser.
 
 ```html
