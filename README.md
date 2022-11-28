@@ -66,6 +66,7 @@ Here's an example object parsed:
 {
   "id": "5d126d86160cea56950f80a9",
   "timestamp": "2019-06-25T18:52:54.000Z",
+  "is_http": true,
   "request": {
     "method": "POST",
     "query": {
@@ -132,6 +133,7 @@ A few extra details about the above parsed properties:
 
 * `id` (String) - is a newly created BSON ObjectId used to uniquely identify this log
 * `timestamp` (String) - is the [ISO-8601][] date time string parsed from the `id` (thanks to MongoDB BSON `ObjectID.getTimestamp` method)
+* `is_http` (Boolean) - defaults to `true` to indicate that this was a parsed HTTP request
 * `duration` (Number) - is the number of milliseconds that `parseRequest` took to parse the request object (note that this uses `process.hrtime` which this package polyfills thanks to [browser-process-hrtime][])
 * `user` (Object) - is parsed from the user object on `req.user` automatically (e.g. you are using [passport][]):
   * `ip_address` (String) - IP address parsed

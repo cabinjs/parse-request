@@ -2,7 +2,7 @@ const path = require('node:path');
 
 const test = require('ava');
 const express = require('express');
-const multer = require('fix-esm').require('multer').default;
+const multer = require('@ladjs/multer');
 const requestId = require('express-request-id');
 const requestReceived = require('request-received');
 const responseTime = require('response-time');

@@ -441,7 +441,10 @@ const parseRequest = (config = {}) => {
     // NOTE: regarding the naming convention of `timestamp`, it seems to be the
     // most widely used and supported property name across logging services
     //
-    timestamp: id.getTimestamp().toISOString()
+    timestamp: id.getTimestamp().toISOString(),
+    // NOTE: this was added in v5.1.0 in order for us to look at logs
+    //       and easily determine which were requests by boolean value
+    is_http: true
   };
 
   if (ctx || req) result.request = {};
