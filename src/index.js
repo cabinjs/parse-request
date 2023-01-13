@@ -257,7 +257,11 @@ function maskProps(obj, props, options) {
     if (typeof obj[key] === 'object') {
       // preserve "err.code" property
       let code;
-      if (obj[key] instanceof Error && obj[key].code) code = obj[key].code;
+      if (
+        (obj[key] instanceof Error || key === 'err') &&
+        typeof obj[key].code !== 'undefined'
+      )
+        code = obj[key].code;
       obj[key] = maskProps(obj[key], props, options);
       // reset the masked code value
       if (code) obj[key].code = code;
