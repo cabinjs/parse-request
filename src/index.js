@@ -236,7 +236,7 @@ function headersToLowerCase(headers) {
   return lowerCasedHeaders;
 }
 
-function maskProps(obj, props, options) {
+function maskProps(obj, props, options, isError = false) {
   // eslint-disable-next-line prefer-object-spread
   options = Object.assign(
     {
@@ -256,18 +256,14 @@ function maskProps(obj, props, options) {
   for (const key in obj) {
     if (typeof obj[key] === 'object') {
       // preserve "err.code" property
-      let code;
-      if (
-        (obj[key] instanceof Error || key === 'err') &&
-        typeof obj[key].code !== 'undefined'
-      )
-        code = obj[key].code;
-      obj[key] = maskProps(obj[key], props, options);
-      // reset the masked code value
-      if (code) obj[key].code = code;
-    } else if (isString(obj[key])) {
+      obj[key] = maskProps(
+        obj[key],
+        props,
+        options,
+        obj[key] instanceof Error || key === 'err'
+      );
+    } else if (isString(obj[key]) && (!isError || key !== 'code'))
       obj[key] = maskString(key, obj[key], props, options);
-    }
   }
 
   return obj;
