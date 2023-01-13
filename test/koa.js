@@ -151,22 +151,22 @@ test('koa with file parsing disabled', async (t) => {
 
 test('koa with query string parsing', async (t) => {
   const res = await t.context.agent
-    .post('/?foo=bar&beep=boop&code=test')
+    .post('/?foo=bar&beep=boop&pin=test')
     .auth('user', 'password')
     .set('Accept', 'application/json')
     .set('Cookie', ['foo=bar;beep=boop']);
   const { query } = res.body.request;
   t.is(query.foo, 'bar');
-  t.is(query.code, '****');
+  t.is(query.pin, '****');
 });
 
 test('koa without query string parsing', async (t) => {
   const res = await t.context.agent
-    .post('/?disableQueryParsing=true&foo=bar&beep=boop&code=test')
+    .post('/?disableQueryParsing=true&foo=bar&beep=boop&pin=test')
     .auth('user', 'password')
     .set('Accept', 'application/json')
     .set('Cookie', ['foo=bar;beep=boop']);
   const { query } = res.body.request;
   t.is(query.foo, 'bar');
-  t.is(query.code, 'test');
+  t.is(query.pin, 'test');
 });
