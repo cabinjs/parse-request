@@ -260,7 +260,8 @@ function maskProps(obj, props, options, isError = false) {
         obj[key],
         props,
         options,
-        obj[key] instanceof Error || key === 'err'
+        // support axe's "original_err" prop too
+        obj[key] instanceof Error || key === 'err' || key === 'original_err'
       );
     } else if (isString(obj[key]) && (!isError || key !== 'code'))
       obj[key] = maskString(key, obj[key], props, options);
