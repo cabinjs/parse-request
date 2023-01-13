@@ -254,10 +254,16 @@ function maskProps(obj, props, options) {
 
   // for...in is much faster than Object.entries or any alternative
   for (const key in obj) {
-    if (typeof obj[key] === 'object')
+    if (typeof obj[key] === 'object') {
+      // preserve "err.code" property
+      let code;
+      if (obj[key] instanceof Error && obj[key].code) code = obj[key].code;
       obj[key] = maskProps(obj[key], props, options);
-    else if (isString(obj[key]))
+      // reset the masked code value
+      if (code) obj[key].code = code;
+    } else if (isString(obj[key])) {
       obj[key] = maskString(key, obj[key], props, options);
+    }
   }
 
   return obj;

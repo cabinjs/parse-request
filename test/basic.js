@@ -629,3 +629,15 @@ test('parses ip address', (t) => {
     '127.0.0.1'
   );
 });
+
+test('preserves error code', (t) => {
+  const err = new Error('oops');
+  err.code = 1;
+  const obj = parseRequest({
+    req: {
+      body: { err }
+    }
+  });
+  const body = JSON.parse(obj.request.body);
+  t.is(body.err.code, 1);
+});
