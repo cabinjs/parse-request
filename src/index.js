@@ -366,17 +366,18 @@ const parseRequest = (config = {}) => {
 
   let query;
   let absoluteUrl;
+  let pathname;
   if (originalUrl) {
     originalUrl = new Url(originalUrl, {});
-
     // parse query, path, and origin to prepare absolute Url
     query = Url.qs.parse(originalUrl.query);
-    const path =
+    pathname = originalUrl.pathname;
+    const url =
       originalUrl.origin === 'null'
         ? originalUrl.pathname
         : `${originalUrl.origin}${originalUrl.pathname}`;
     const qs = Url.qs.stringify(query, true);
-    absoluteUrl = path + qs;
+    absoluteUrl = url + qs;
   }
 
   // default to the user object
@@ -459,11 +460,16 @@ const parseRequest = (config = {}) => {
   if (headers) result.request.headers = headers;
   if (cookies) result.request.cookies = cookies;
   if (absoluteUrl) result.request.url = absoluteUrl;
+  if (pathname) result.request.pathname = pathname;
+  // TODO: we need to add `result.request.path` for the URL without querystring
+  //       and then subsequently integrate this into API logs for duplicate prevention
   if (user) result.user = user;
 
   if (query) {
     if (parseQuery && !nodeReq[disableQueryParsingSymbol])
       query = maskProps(querystring.parse(query), sanitizeFields);
+    // TODO: the query and querystring in other props isn't masked
+    //       (e.g. in url, href, path, etc)
     result.request.query = query;
   }
 
