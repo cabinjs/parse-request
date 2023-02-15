@@ -118,9 +118,6 @@ test('express with body parsing disabled', async (t) => {
     .attach('boop', path.join(fixtures, 'boop-1.txt'))
     .attach('boop', path.join(fixtures, 'boop-2.txt'))
     .set('Cookie', ['foo=bar;beep=boop']);
-  console.log('res', res);
-  console.log('res.body', res.body);
-  console.log('res.body.request', res.body.request);
   t.true(typeof res.body.request.timestamp === 'string');
   t.true(typeof res.body.request.body === 'undefined');
 });
