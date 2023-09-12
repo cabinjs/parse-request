@@ -1,5 +1,4 @@
 const path = require('node:path');
-
 const test = require('ava');
 const express = require('express');
 const multer = require('@ladjs/multer');
@@ -10,7 +9,6 @@ const supertest = require('supertest');
 const Cabin = require('cabin');
 const { Signale } = require('signale');
 const getPort = require('get-port');
-
 const parseRequest = require('..');
 
 const disableBodyParsing = Symbol.for('parse-request.disableBodyParsing');
@@ -119,7 +117,7 @@ test('express with body parsing disabled', async (t) => {
     .attach('boop', path.join(fixtures, 'boop-2.txt'))
     .set('Cookie', ['foo=bar;beep=boop']);
   t.true(typeof res.body.request.timestamp === 'string');
-  t.true(typeof res.body.request.body === 'undefined');
+  t.true(res.body.request.body === undefined);
 });
 
 test('express with file parsing disabled', async (t) => {
@@ -139,5 +137,5 @@ test('express with file parsing disabled', async (t) => {
     .attach('boop', path.join(fixtures, 'boop-2.txt'))
     .set('Cookie', ['foo=bar;beep=boop']);
   t.true(typeof res.body.request.timestamp === 'string');
-  t.true(typeof res.body.request.files === 'undefined');
+  t.true(res.body.request.files === undefined);
 });

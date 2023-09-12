@@ -127,7 +127,7 @@ function isNull(val) {
 }
 
 function isUndefined(val) {
-  return typeof val === 'undefined';
+  return val === undefined;
 }
 
 function isObject(val) {
@@ -140,7 +140,7 @@ function isString(val) {
 
 // <https://github.com/braintree/credit-card-type/issues/90>
 function isCreditCard(val) {
-  const digits = val.replace(/\D/g, '');
+  const digits = val.replaceAll(/\D/g, '');
   const types = creditCardType(digits);
   if (!Array.isArray(types) || types.length === 0) return false;
   let match = false;
@@ -211,7 +211,7 @@ function maskString(key, val, props, options) {
 
     // if it was a credit card then replace all digits with asterisk
     if (options.maskCreditCards && isCreditCard(val))
-      return val.replace(/[^\D\s]/g, '*');
+      return val.replaceAll(/[^\D\s]/g, '*');
   }
 
   if (notIncludedInProps) return val;
@@ -221,8 +221,8 @@ function maskString(key, val, props, options) {
   if (options.isHeaders && key === 'authorization')
     return `${val.split(' ')[0]} ${val
       .slice(val.indexOf(' ') + 1)
-      .replace(/./g, '*')}`;
-  return val.replace(/./g, '*');
+      .replaceAll(/./g, '*')}`;
+  return val.replaceAll(/./g, '*');
 }
 
 function headersToLowerCase(headers) {

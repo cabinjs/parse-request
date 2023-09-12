@@ -1,7 +1,6 @@
 const { Buffer } = require('node:buffer');
 const { PassThrough } = require('node:stream');
 const test = require('ava');
-
 const ObjectId = require('bson-objectid');
 const parseRequest = require('..');
 
@@ -113,7 +112,7 @@ test('parses responseHeaders as a string w/o HTTP line', (t) => {
       'Hello World'
     ].join('\r\n')
   });
-  t.true(typeof obj.response.status_code === 'undefined');
+  t.true(obj.response.status_code === undefined);
   t.true(typeof obj.response.headers.date === 'string');
 });
 
@@ -245,7 +244,7 @@ test('does not parse body', (t) => {
     },
     parseBody: false
   });
-  t.true(typeof obj.request.body === 'undefined');
+  t.true(obj.request.body === undefined);
 });
 
 test('does not parse files', (t) => {
@@ -270,8 +269,8 @@ test('does not parse files', (t) => {
     },
     parseFiles: false
   });
-  t.true(typeof obj.request.file === 'undefined');
-  t.true(typeof obj.request.files === 'undefined');
+  t.true(obj.request.file === undefined);
+  t.true(obj.request.files === undefined);
 });
 
 test('hides authentication header', (t) => {
