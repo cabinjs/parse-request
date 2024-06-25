@@ -181,7 +181,7 @@ We highly recommend to simply use [Cabin][] as this package is built-in!
 The example below uses [xhook][] which is used to intercept HTTP requests made in the browser.
 
 ```html
-<script src="https://polyfill.io/v3/polyfill.min.js?features=performance,WeakRef"></script>
+<script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=performance,WeakRef"></script>
 <script src="https://unpkg.com/xhook"></script>
 <script src="https://unpkg.com/parse-request"></script>
 <script type="text/javascript">
@@ -197,10 +197,10 @@ The example below uses [xhook][] which is used to intercept HTTP requests made i
 
 #### Required Browser Features
 
-We recommend using <https://polyfill.io> (specifically with the bundle mentioned in [VanillaJS](#vanillajs) above):
+We recommend using <https://cdnjs.cloudflare.com/polyfill> (specifically with the bundle mentioned in [VanillaJS](#vanillajs) above):
 
 ```html
-<script src="https://polyfill.io/v3/polyfill.min.js?features=performance,WeakRef"></script>
+<script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=performance,WeakRef"></script>
 ```
 
 * performance.now() is not supported in op\_mini all
