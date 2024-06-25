@@ -393,8 +393,8 @@ const parseRequest = (config = {}) => {
         typeof parsedUser.toJSON === 'function'
           ? parsedUser.toJSON()
           : typeof parsedUser.toObject === 'function'
-          ? parsedUser.toObject()
-          : clone(parsedUser);
+            ? parsedUser.toObject()
+            : clone(parsedUser);
     } catch (err) {
       debug(err);
       try {
@@ -419,8 +419,8 @@ const parseRequest = (config = {}) => {
   const originalBody = ctx
     ? ctx.request._originalBody || ctx.request.body
     : req
-    ? req._originalBody || req.body
-    : null;
+      ? req._originalBody || req.body
+      : null;
 
   if (originalBody && parseBody && !nodeReq[disableBodyParsingSymbol]) {
     //
