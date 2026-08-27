@@ -24,7 +24,7 @@
     "browser-hrtime": "^1.1.8",
     "bson-objectid": "^2.0.4",
     "convert-hrtime": "3.0.0",
-    "cookie": "^0.5.0",
+    "cookie": "^0.7.0",
     "credit-card-type": "^9.1.0",
     "debug": "^4.3.4",
     "fast-safe-stringify": "^2.1.1",
